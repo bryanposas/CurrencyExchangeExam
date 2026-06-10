@@ -82,19 +82,18 @@ struct ExchangeRates: Codable {
 }
 
 /// Represents a completed currency exchange transaction
-struct ExchangeTransaction {
+struct ExchangeTransaction: Codable {
     let fromCurrency: String
     let toCurrency: String
     let fromAmount: Double
     let toAmount: Double
     let exchangeRate: Double
-    let commissionAmount: Double
     let timestamp: Date
-
+    
+    /// Commission amount deducted during transaction
+    let commissionAmount: Double
+    
     var description: String {
-        return String(
-            format: "%.2f %@ → %.2f %@ (fee: %.2f %@)",
-            fromAmount, fromCurrency, toAmount, toCurrency, commissionAmount, fromCurrency
-        )
+        return "\(String(format: "%.2f", fromAmount)) \(fromCurrency) → \(String(format: "%.2f", toAmount)) \(toCurrency)"
     }
 }

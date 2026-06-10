@@ -16,6 +16,8 @@
 		0E569B4C2FD93EFF00DD5EBA /* AccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B492FD93EFE00DD5EBA /* AccountTests.swift */; };
 		0E569B4D2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */; };
 		0E569B512FD9708C00DD5EBA /* CircleIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B502FD9708C00DD5EBA /* CircleIconView.swift */; };
+		0E569B582FD97D3E00DD5EBA /* CoreDataPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B572FD97D3E00DD5EBA /* CoreDataPersistenceService.swift */; };
+		0E569B5A2FD9811000DD5EBA /* CoreDataPersistenceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B592FD9811000DD5EBA /* CoreDataPersistenceServiceTests.swift */; };
 		0E6B47712FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */; };
 		0E6B47752FD904F50004DE00 /* BalancesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47742FD904F50004DE00 /* BalancesViewController.swift */; };
 		0E6B47772FD904F80004DE00 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E6B47762FD904F80004DE00 /* Assets.xcassets */; };
@@ -66,6 +68,8 @@
 		0E569B492FD93EFE00DD5EBA /* AccountTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountTests.swift; sourceTree = "<group>"; };
 		0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeManagerTests.swift; sourceTree = "<group>"; };
 		0E569B502FD9708C00DD5EBA /* CircleIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleIconView.swift; sourceTree = "<group>"; };
+		0E569B572FD97D3E00DD5EBA /* CoreDataPersistenceService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataPersistenceService.swift; sourceTree = "<group>"; };
+		0E569B592FD9811000DD5EBA /* CoreDataPersistenceServiceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataPersistenceServiceTests.swift; sourceTree = "<group>"; };
 		0E6B476D2FD904F50004DE00 /* CurrencyExchangeExam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencyExchangeExam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeExamAppDelegate.swift; sourceTree = "<group>"; };
 		0E6B47742FD904F50004DE00 /* BalancesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesViewController.swift; sourceTree = "<group>"; };
@@ -79,6 +83,8 @@
 		0E6B478F2FD904F90004DE00 /* CurrencyExchangeExamUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeExamUITests.swift; sourceTree = "<group>"; };
 		0E6B47912FD904F90004DE00 /* CurrencyExchangeExamUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeExamUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		0E6B47A12FD9177A0004DE00 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		0E000D012FD921C500A52521 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig; path = Secrets.xcconfig; sourceTree = SOURCE_ROOT; };
+		0E000D022FD921C500A52521 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Secrets.xcconfig.example; path = Secrets.xcconfig.example; sourceTree = SOURCE_ROOT; };
 		0E73CF052FD921C500A52520 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		0E73CF072FD921C500A52520 /* BalanceCardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalanceCardView.swift; sourceTree = "<group>"; };
 		0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyPickerViewController.swift; sourceTree = "<group>"; };
@@ -119,19 +125,12 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0E569B472FD93D7500DD5EBA /* Controllers */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Controllers;
-			sourceTree = "<group>";
-		};
-		0E569B4E2FD9630C00DD5EBA /* NetworkClient */ = {
+		0E569B4E2FD9630C00DD5EBA /* NetworkLayer */ = {
 			isa = PBXGroup;
 			children = (
 				0E000A012FD921C500A52520 /* NetworkClient.swift */,
 			);
-			path = NetworkClient;
+			path = NetworkLayer;
 			sourceTree = "<group>";
 		};
 		0E569B4F2FD9704400DD5EBA /* Components */ = {
@@ -144,10 +143,20 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		0E569B562FD97B4200DD5EBA /* PersistenceLayer */ = {
+			isa = PBXGroup;
+			children = (
+				0E569B572FD97D3E00DD5EBA /* CoreDataPersistenceService.swift */,
+			);
+			path = PersistenceLayer;
+			sourceTree = "<group>";
+		};
 		0E6B47642FD904F50004DE00 = {
 			isa = PBXGroup;
 			children = (
 				0E6B47A12FD9177A0004DE00 /* README.md */,
+				0E000D012FD921C500A52521 /* Secrets.xcconfig */,
+				0E000D022FD921C500A52521 /* Secrets.xcconfig.example */,
 				0E6B476F2FD904F50004DE00 /* CurrencyExchangeExam */,
 				0E6B47842FD904F90004DE00 /* CurrencyExchangeExamTests */,
 				0E6B478E2FD904F90004DE00 /* CurrencyExchangeExamUITests */,
@@ -174,7 +183,6 @@
 				0E73CF062FD921C500A52520 /* Resources */,
 				0E73CF0E2FD921C500A52520 /* Services */,
 				0E73CF092FD921C500A52520 /* Views */,
-				0E569B472FD93D7500DD5EBA /* Controllers */,
 				0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */,
 				0E6B47762FD904F80004DE00 /* Assets.xcassets */,
 				0E6B47782FD904F80004DE00 /* Info.plist */,
@@ -195,6 +203,7 @@
 		0E6B47842FD904F90004DE00 /* CurrencyExchangeExamTests */ = {
 			isa = PBXGroup;
 			children = (
+				0E569B592FD9811000DD5EBA /* CoreDataPersistenceServiceTests.swift */,
 				0E569B492FD93EFE00DD5EBA /* AccountTests.swift */,
 				0E73CF212FD921C500A52520 /* AlertPresenterTests.swift */,
 				0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */,
@@ -239,7 +248,8 @@
 		0E73CF0E2FD921C500A52520 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				0E569B4E2FD9630C00DD5EBA /* NetworkClient */,
+				0E569B562FD97B4200DD5EBA /* PersistenceLayer */,
+				0E569B4E2FD9630C00DD5EBA /* NetworkLayer */,
 				0E73CF0C2FD921C500A52520 /* CurrencyExchangeManager.swift */,
 				0E73CF0D2FD921C500A52520 /* ExchangeRateService.swift */,
 				0E000B012FD921C500A52520 /* NetworkMonitor.swift */,
@@ -412,6 +422,7 @@
 				0E73CF192FD921C600A52520 /* ExchangeRateService.swift in Sources */,
 				0E73CF1C2FD921C600A52520 /* UIViewController+Extensions.swift in Sources */,
 				0E73CF1E2FD921C600A52520 /* AlertPresenter.swift in Sources */,
+				0E569B582FD97D3E00DD5EBA /* CoreDataPersistenceService.swift in Sources */,
 				0E73CF1B2FD921C600A52520 /* Currency.swift in Sources */,
 				0E73CF162FD921C600A52520 /* CurrencyPickerViewController.swift in Sources */,
 				0E73CF172FD921C600A52520 /* ExchangeViewModel.swift in Sources */,
@@ -430,6 +441,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E569B5A2FD9811000DD5EBA /* CoreDataPersistenceServiceTests.swift in Sources */,
 				0E569B4B2FD93EFF00DD5EBA /* ExchangeRatesTests.swift in Sources */,
 				0E569B4D2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift in Sources */,
 				0E569B4C2FD93EFF00DD5EBA /* AccountTests.swift in Sources */,
@@ -465,6 +477,7 @@
 /* Begin XCBuildConfiguration section */
 		0E6B47932FD904F90004DE00 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0E000D012FD921C500A52521 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -526,6 +539,7 @@
 		};
 		0E6B47942FD904F90004DE00 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0E000D012FD921C500A52521 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

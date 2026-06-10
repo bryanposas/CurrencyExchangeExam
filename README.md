@@ -12,13 +12,22 @@ A real-time currency exchange app built with UIKit, following MVVM architecture 
 
 ---
 
+## Project Considerations
+- As regards the API, I chose Currency Freaks because it implemented CORS for more secure api calls. FinTech apps require tight security protocols.
+- I opted not to use any third-party libraries because one of the requirements is for the UI to be made out of pure UIKit which means that I might work on old codes where older versions of third-libraries might not work anymore or are not supported anymore so it is safer and more beneficial to the company to just create and maintain our own components. It might not be the wisest choice back in the days but nowadays with the help of AI, this is the more cost-efficient option and it also gives us the flexibility to customize the functionalities as we wish without being limited by the features and issues of third-party libraries
+- I was contemplating whether to use Combine Framework to display reactive programming by using bindings between the ViewModel and the ViewController but I decided not to use it because I am under the impression that I should display skills in handling old codes and Combine is a relatively new framework
+- Moreover, in my experience with one of the projects related to FinTech that I've worked on, the security protocol is very strict and doesn't allow the use of third-party libraries unless extremely necessary and such library has been independently checked to determine that it is free from any security vulnerabilities and performance issues
+- I used VSCode to write the AI prompts on Claude Code while using Xcode with GitHub Copilot extension to ensure I have enough tokens to run the prompts (I run out of tokens so I had to manually do some codes)
+- Offline Capability: I tried to implement a simple in-memory cache for exchange rates to allow the app to function with the last known rates even when offline. Rates are refreshed every 5 minutes when online, but if the device is offline, the app will use cached rates and display an "Offline Mode" banner to inform the user.
+- It took me a total of ~10 hours to complete the implementation, including writing tests and documentation. ~2 hours were spent on setting up, 5 hours on implementing the core features and UI, and 3 hours on writing unit tests and this documentation.
+
 ## Features
 
 ### Core Functionality
 
 - Multi-currency account starting with 1,000 USD
 - Real-time exchange rates from the CurrencyFreaks API
-- 1% commission fee per exchange, deducted from the sell balance
+- 1% commission fee per exchange, deducted from the exchange balance
 - Prevents negative balances and same-currency exchanges
 - Auto-refreshes exchange rates every 5 minutes
 - Full transaction history per currency

@@ -1,17 +1,23 @@
 //
-//  BalancesViewController.swift
+//  CurrencyExchangeViewController.swift
 //  CurrencyExchangeExam
 //
 //  Created by Macintosh HD on 6/10/26.
 //
-//  Root screen displaying each currency balance as a tappable card.
-//  Owns a BalancesViewModel; navigates to BalanceDetailViewController on card tap.
-//  Displays a connectivity banner when the network is unreachable.
+//  This file contains BalancesViewController — the root screen that displays
+//  each currency balance as a tappable card. Tapping a card navigates to
+//  BalanceDetailViewController, which provides the exchange entry point.
+//
+//  Architectural note: the shared CurrencyExchangeViewModel is injected here
+//  and passed down through the navigation stack so every screen operates on
+//  the same account state without any singleton or shared-state coupling.
 
 import UIKit
 
 // MARK: - BalancesViewController
 
+/// Root screen displaying all currency balances as scrollable cards.
+/// Refreshes cards on `viewWillAppear` to reflect changes made on child screens.
 final class BalancesViewController: UIViewController {
 
     // MARK: - UI
@@ -19,20 +25,18 @@ final class BalancesViewController: UIViewController {
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
     private let scrollView = UIScrollView()
     private let stackView = UIStackView()
-    private let banner = ConnectionStatusBanner()
 
     // MARK: - Properties
 
     private let viewModel: BalancesViewModel
     private let alertPresenter: AlertPresenting
     private let networkMonitor: NetworkMonitoring
-    private var networkMonitorToken: UUID?
 
     // MARK: - Init
 
     init(
         viewModel: BalancesViewModel,
-        networkMonitor: NetworkMonitoring,
+        networkMonitor: NetworkMonitoring = NetworkMonitor(),
         alertPresenter: AlertPresenting = AlertPresenter()
     ) {
         self.viewModel = viewModel
@@ -49,7 +53,6 @@ final class BalancesViewController: UIViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupScrollLayout()
-        setupNetworkMonitoring()
         viewModel.delegate = self
         viewModel.refreshExchangeRates()
         refreshBalanceCards()
@@ -57,35 +60,17 @@ final class BalancesViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // Reclaim delegate ownership whenever this screen becomes active.
+        // Child screens (ExchangeViewController) temporarily take over the
+        // delegate while they are visible; returning here restores it.
+        viewModel.delegate = self
         refreshBalanceCards()
-        if !networkMonitor.isConnected {
-            banner.show(message: Strings.networkWarning, delay: 0)
-        }
-    }
-
-    deinit {
-        if let token = networkMonitorToken {
-            networkMonitor.removeObserver(id: token)
-        }
-    }
-
-    // MARK: - Network Monitoring
-
-    private func setupNetworkMonitoring() {
-        networkMonitorToken = networkMonitor.addObserver { [weak self] isConnected in
-            guard let self else { return }
-            if isConnected {
-                self.banner.hide()
-            } else {
-                self.banner.show(message: Strings.networkWarning, delay: 3.0)
-            }
-        }
     }
 
     // MARK: - Navigation Bar
 
     private func setupNavigationBar() {
-        title = Strings.navTitle
+        title = Strings.Balances.navTitle
 
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -105,16 +90,6 @@ final class BalancesViewController: UIViewController {
     private func setupScrollLayout() {
         view.backgroundColor = .systemGroupedBackground
 
-        // Banner sits at the safe-area top with height 0; scrollView is pinned below it.
-        // When the banner expands it pushes the scrollView down automatically.
-        banner.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(banner)
-        NSLayoutConstraint.activate([
-            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            banner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            banner.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
-
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
 
@@ -125,7 +100,7 @@ final class BalancesViewController: UIViewController {
 
         let p = Layout.padding
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: banner.bottomAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -155,16 +130,13 @@ final class BalancesViewController: UIViewController {
     // MARK: - Navigation
 
     private func navigateToDetail(currency: String) {
-        let detailVC = BalanceDetailViewController(
-            currency: currency,
-            viewModel: viewModel.makeDetailViewModel(),
-            networkMonitor: networkMonitor
-        )
+        let detailVM = viewModel.makeDetailViewModel()
+        let detailVC = BalanceDetailViewController(currency: currency, viewModel: detailVM, networkMonitor: networkMonitor)
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
 
-// MARK: - BalancesViewModelDelegate
+// MARK: - CurrencyExchangeViewModelDelegate
 
 extension BalancesViewController: BalancesViewModelDelegate {
     func balancesViewModelDidFinishRefreshing() {
@@ -183,8 +155,8 @@ extension BalancesViewController: BalancesViewModelDelegate {
         DispatchQueue.main.async {
             self.alertPresenter.showAlert(
                 on: self,
-                title: Strings.errorTitle,
-                message: error.errorDescription ?? Strings.errorGeneric
+                title: Strings.Error.title,
+                message: error.errorDescription ?? Strings.Error.generic
             )
         }
     }
@@ -193,10 +165,13 @@ extension BalancesViewController: BalancesViewModelDelegate {
 // MARK: - Constants
 
 private enum Strings {
-    static let navTitle = "My Balances"
-    static let errorTitle = "Error"
-    static let errorGeneric = "An error occurred."
-    static let networkWarning = "Exchange rates may not be up to date. Check your internet connection."
+    enum Balances {
+        static let navTitle = "My Balances"
+    }
+    enum Error {
+        static let title = "Error"
+        static let generic = "An error occurred."
+    }
 }
 
 private enum Colors {

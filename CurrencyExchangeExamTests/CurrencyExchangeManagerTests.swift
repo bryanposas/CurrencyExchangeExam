@@ -12,62 +12,82 @@ final class CurrencyExchangeManagerTests: XCTestCase {
     
     var sut: CurrencyExchangeManager!
     var mockRateService: MockExchangeRateService!
+    var mockPersistenceService: MockPersistenceService!
     
     override func setUp() {
         super.setUp()
         mockRateService = MockExchangeRateService()
-        sut = CurrencyExchangeManager(rateService: mockRateService)
+        mockPersistenceService = MockPersistenceService()
+        sut = CurrencyExchangeManager(rateService: mockRateService, persistenceService: mockPersistenceService)
     }
     
     override func tearDown() {
         sut = nil
         mockRateService = nil
+        mockPersistenceService = nil
         super.tearDown()
     }
     
     // MARK: - Tests: Initialization
     
-    func testInitializationWithUSDBalance() {
-        let balance = sut.getBalance(for: "USD")
-        XCTAssertEqual(balance, 1000)
+    func testInitializationWithDefaultBalance() {
+        let balance = sut.getBalance(for: Constants.Account.initialFromCurrency)
+        XCTAssertEqual(balance, Constants.Account.initialBalance)
+    }
+    
+    func testInitializationSavesInitialBalance() throws {
+        // The mock should have recorded the save
+        let savedBalances = mockPersistenceService.savedBalances
+        XCTAssertNotNil(savedBalances)
+        XCTAssertEqual(savedBalances?[Constants.Account.initialFromCurrency], Constants.Account.initialBalance)
+    }
+    
+    func testInitializationLoadsPersistedBalances() {
+        // Create a new persistence service with pre-loaded balances
+        let persistenceWithData = MockPersistenceService()
+        persistenceWithData.balancesToReturn = ["EUR": 500, "USD": 250]
+        
+        let manager = CurrencyExchangeManager(rateService: mockRateService, persistenceService: persistenceWithData)
+        
+        XCTAssertEqual(manager.getBalance(for: "EUR"), 500)
+        XCTAssertEqual(manager.getBalance(for: "USD"), 250)
     }
     
     // MARK: - Tests: Exchange Validation
     
     func testExchangeFailsWithInvalidAmount() {
-        let result = sut.exchange(amount: 0, from: "USD", to: "EUR")
-
+        let result = sut.exchange(amount: 0, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .invalidAmount)
         } else {
             XCTFail("Expected failure")
         }
     }
-
+    
     func testExchangeFailsWithSameCurrency() {
-        let result = sut.exchange(amount: 100, from: "USD", to: "USD")
-
+        let result = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: Constants.Account.initialFromCurrency)
+        
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .sameCurrency)
         } else {
             XCTFail("Expected failure")
         }
     }
-
+    
     func testExchangeFailsWithInsufficientFunds() {
-        let result = sut.exchange(amount: 2000, from: "USD", to: "EUR")
-
+        let result = sut.exchange(amount: 2000, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .insufficientFunds)
         } else {
             XCTFail("Expected failure")
         }
     }
-
+    
     func testExchangeFailsWithMissingRates() {
-        // USD has 1000 balance, so the insufficient-funds check passes and we reach the rates check
-        let result = sut.exchange(amount: 100, from: "USD", to: "EUR")
-
+        let result = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .invalidExchangeRate)
         } else {
@@ -78,56 +98,78 @@ final class CurrencyExchangeManagerTests: XCTestCase {
     // MARK: - Tests: Successful Exchange
     
     func testSuccessfulExchange() {
+        // Set up rates
         let rates = ExchangeRates(
-            base: "USD",
-            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
+            base: Constants.Account.initialFromCurrency,
+            rates: [Rate(currencyCode: Constants.Account.initialFromCurrency, value: 1.0), Rate(currencyCode: "EUR", value: 0.92)],
             date: nil
         )
         sut.exchangeRates = rates
-
-        let result = sut.exchange(amount: 100, from: "USD", to: "EUR")
-
+        
+        let result = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
         switch result {
         case .success(let transaction):
-            XCTAssertEqual(transaction.fromCurrency, "USD")
+            XCTAssertEqual(transaction.fromCurrency, Constants.Account.initialFromCurrency)
             XCTAssertEqual(transaction.toCurrency, "EUR")
             XCTAssertEqual(transaction.fromAmount, 100)
-            XCTAssertEqual(transaction.toAmount, 91, accuracy: 0.01)
-            XCTAssertEqual(transaction.exchangeRate, 0.91, accuracy: 0.0001)
-            XCTAssertEqual(transaction.commissionAmount, 1.0, accuracy: 0.001) // 1% of 100
+            XCTAssertEqual(transaction.commissionAmount, 1.0) // 1% of 100
+            XCTAssertEqual(transaction.toAmount, 92) // 100 * 0.92
         case .failure:
             XCTFail("Expected success")
         }
     }
-
-    func testBalanceUpdatedAfterExchange() {
+    
+    func testBalanceUpdatedAfterExchangeIncludingCommission() {
         let rates = ExchangeRates(
-            base: "USD",
-            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
+            base: Constants.Account.initialFromCurrency,
+            rates: [Rate(currencyCode: Constants.Account.initialFromCurrency, value: 1.0), Rate(currencyCode: "EUR", value: 0.92)],
             date: nil
         )
         sut.exchangeRates = rates
-
-        _ = sut.exchange(amount: 100, from: "USD", to: "EUR")
-
-        // 100 sold + 1 commission (1%) deducted from USD; 100 * 0.91 = 91 received in EUR
-        XCTAssertEqual(sut.getBalance(for: "USD"), 899, accuracy: 0.01)
-        XCTAssertEqual(sut.getBalance(for: "EUR"), 91, accuracy: 0.01)
+        
+        _ = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
+        // 1000 - 100 (amount) - 1 (commission) = 899
+        XCTAssertEqual(sut.getBalance(for: Constants.Account.initialFromCurrency), 899)
+        // 100 * 0.92 = 92
+        XCTAssertEqual(sut.getBalance(for: "EUR"), 92)
     }
-
+    
     func testTransactionHistoryRecorded() {
         let rates = ExchangeRates(
-            base: "USD",
-            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
+            base: Constants.Account.initialFromCurrency,
+            rates: [Rate(currencyCode: Constants.Account.initialFromCurrency, value: 1.0), Rate(currencyCode: "EUR", value: 0.92)],
             date: nil
         )
         sut.exchangeRates = rates
-
-        _ = sut.exchange(amount: 100, from: "USD", to: "EUR")
+        
+        _ = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: "EUR")
         
         let history = sut.getTransactionHistory()
         XCTAssertEqual(history.count, 1)
         XCTAssertEqual(history[0].fromAmount, 100)
+        XCTAssertEqual(history[0].commissionAmount, 1.0)
+    }
+    
+    func testExchangePersistsData() throws {
+        let rates = ExchangeRates(
+            base: Constants.Account.initialFromCurrency,
+            rates: [Rate(currencyCode: Constants.Account.initialFromCurrency, value: 1.0), Rate(currencyCode: "EUR", value: 0.92)],
+            date: nil
+        )
+        sut.exchangeRates = rates
+        
+        _ = sut.exchange(amount: 100, from: Constants.Account.initialFromCurrency, to: "EUR")
+        
+        // Verify balances were persisted
+        XCTAssertNotNil(mockPersistenceService.savedBalances)
+        XCTAssertEqual(mockPersistenceService.savedBalances?[Constants.Account.initialFromCurrency], 899)
+        XCTAssertEqual(mockPersistenceService.savedBalances?["EUR"], 92)
+        
+        // Verify transaction was persisted
+        XCTAssertNotNil(mockPersistenceService.savedTransactions)
+        XCTAssertEqual(mockPersistenceService.savedTransactions?.count, 1)
     }
 }
 
@@ -145,3 +187,36 @@ final class MockExchangeRateService: ExchangeRateService {
     }
 }
 
+// MARK: - Mock Persistence Service
+
+/// Mock persistence service for testing that tracks save operations
+final class MockPersistenceService: PersistenceProtocol {
+    var balancesToReturn: [String: Double] = [:]
+    var transactionsToReturn: [ExchangeTransaction] = []
+    
+    var savedBalances: [String: Double]?
+    var savedTransactions: [ExchangeTransaction]?
+    var clearAllCalled = false
+    
+    func saveBalances(_ balances: [String: Double]) throws {
+        self.savedBalances = balances
+    }
+    
+    func loadBalances() -> [String: Double] {
+        return balancesToReturn
+    }
+    
+    func saveTransactionHistory(_ transactions: [ExchangeTransaction]) throws {
+        self.savedTransactions = transactions
+    }
+    
+    func loadTransactionHistory() -> [ExchangeTransaction] {
+        return transactionsToReturn
+    }
+    
+    func clearAll() {
+        clearAllCalled = true
+        balancesToReturn = [:]
+        transactionsToReturn = []
+    }
+}

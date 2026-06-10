@@ -11,17 +11,42 @@ import Foundation
 final class CurrencyExchangeManager {
     // MARK: - Properties
     private var account: Account
-    var exchangeRates: ExchangeRates?
     private(set) var transactionHistory: [ExchangeTransaction] = []
     
     let rateService: ExchangeRateService
+    let persistenceService: PersistenceProtocol
+    var exchangeRates: ExchangeRates?
     private var refreshTimer: Timer?
     
     // MARK: - Initialization
-    init(rateService: ExchangeRateService = ExchangeRateService()) {
+    init(
+        rateService: ExchangeRateService = ExchangeRateService(),
+        persistenceService: PersistenceProtocol
+    ) {
         self.rateService = rateService
+        self.persistenceService = persistenceService
+
+        // Load persisted data, or initialize with defaults
+        let loadedBalances = self.persistenceService.loadBalances()
         self.account = Account()
-        self.account.setBalance(Constants.Account.initialBalance, for: Constants.Account.initialCurrency)
+        
+        if loadedBalances.isEmpty {
+            // First-time launch: initialize with default balance
+            self.account.setBalance(Constants.Account.initialBalance, for: Constants.Account.initialFromCurrency)
+            // Persist the initial state
+            do {
+                try self.persistenceService.saveBalances(self.account.balances)
+            } catch {
+                print("Failed to persist initial account state: \(error)")
+            }
+        } else {
+            // Restore previously saved balances
+            self.account.balances = loadedBalances
+        }
+        
+        // Load persisted transaction history
+        self.transactionHistory = self.persistenceService.loadTransactionHistory()
+        
         self.setupAutoRefresh()
     }
     
@@ -45,7 +70,8 @@ final class CurrencyExchangeManager {
     /// Get all currencies that have exchange rates
     func getAllAvailableCurrencies() -> [String] {
         guard let rates = exchangeRates else { return getAvailableCurrencies() }
-        return rates.rates.map { $0.currencyCode }.sorted()
+        let currencyCodes = rates.rates.map { $0.currencyCode }
+        return currencyCodes.sorted()
     }
     
     /// Perform a currency exchange
@@ -58,27 +84,27 @@ final class CurrencyExchangeManager {
         // Validation
         guard amount > 0 else { return .failure(.invalidAmount) }
         guard fromCurrency != toCurrency else { return .failure(.sameCurrency) }
-
-        let commission = amount * Constants.Account.commissionRate
-        let totalCost = amount + commission
-        guard account.canExchange(amount: totalCost, from: fromCurrency) else { return .failure(.insufficientFunds) }
-
+        guard account.canExchange(amount: amount, from: fromCurrency) else { return .failure(.insufficientFunds) }
+        
         // Get exchange rate
         guard let rates = exchangeRates else { return .failure(.invalidExchangeRate) }
         guard let rate = rates.getRate(from: fromCurrency, to: toCurrency) else {
             return .failure(.invalidExchangeRate)
         }
-
-        // Calculate target amount (commission is a fee on top, does not reduce converted amount)
+        
+        // Calculate commission (1%)
+        let commission = amount * Constants.Account.commissionRate
+        
+        // Calculate target amount
         let targetAmount = amount * rate
-
+        
         // Update balances
-        var updatedBalance = account.getBalance(for: fromCurrency) - totalCost
+        var updatedBalance = account.getBalance(for: fromCurrency) - amount - commission
         account.setBalance(updatedBalance, for: fromCurrency)
-
+        
         updatedBalance = account.getBalance(for: toCurrency) + targetAmount
         account.setBalance(updatedBalance, for: toCurrency)
-
+        
         // Create transaction record
         let transaction = ExchangeTransaction(
             fromCurrency: fromCurrency,
@@ -86,11 +112,21 @@ final class CurrencyExchangeManager {
             fromAmount: amount,
             toAmount: targetAmount,
             exchangeRate: rate,
-            commissionAmount: commission,
-            timestamp: Date()
+            timestamp: Date(),
+            commissionAmount: commission
         )
         
         transactionHistory.append(transaction)
+        
+        // Persist changes
+        do {
+            try persistenceService.saveBalances(account.balances)
+            try persistenceService.saveTransactionHistory(transactionHistory)
+        } catch {
+            print("Failed to persist exchange: \(error)")
+            // Continue despite persistence failure - the exchange was successful in memory
+        }
+        
         return .success(transaction)
     }
     
@@ -120,6 +156,16 @@ final class CurrencyExchangeManager {
         return transactionHistory.sorted { $0.timestamp > $1.timestamp }
     }
     
+    /// Persist current account state (useful after any manual balance adjustments)
+    func persistState() {
+        do {
+            try persistenceService.saveBalances(account.balances)
+            try persistenceService.saveTransactionHistory(transactionHistory)
+        } catch {
+            print("Failed to persist account state: \(error)")
+        }
+    }
+    
     // MARK: - Private Methods
     
     /// Setup automatic refresh of exchange rates every 5 minutes
@@ -129,12 +175,13 @@ final class CurrencyExchangeManager {
         }
     }
     
-    /// Ensure base currencies exist in the rates (USD should be present as the API base)
+    /// Ensure base currencies exist in the rates (EUR should be present)
     private func ensureBaseCurrenciesExist(_ rates: ExchangeRates) {
+        // If EUR is in our balances but not in rates, try to add it
         let rateCodes = Set(rates.rates.map { $0.currencyCode })
         for currencyCode in account.balances.keys {
-            if !rateCodes.contains(currencyCode) && currencyCode == Constants.Account.initialCurrency {
-                // Would need to adjust rates if the initial currency is not represented
+            if !rateCodes.contains(currencyCode) && currencyCode == "EUR" {
+                // Would need to adjust rates if EUR is not the base
             }
         }
     }
