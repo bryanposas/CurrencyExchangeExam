@@ -1,5 +1,5 @@
 //
-//  CurrencyExchangeViewModel.swift
+//  ExchangeViewModel.swift
 //  CurrencyExchangeExam
 //
 //  Created by Macintosh HD on 6/10/26.

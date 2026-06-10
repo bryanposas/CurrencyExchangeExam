@@ -313,18 +313,19 @@ final class ExchangeViewController: UIViewController {
             sellAmountLabel.trailingAnchor.constraint(equalTo: sellCurrencyLabel.leadingAnchor, constant: -8),
             sellAmountLabel.leadingAnchor.constraint(greaterThanOrEqualTo: sellTitleLabel.trailingAnchor, constant: 8),
 
-            // Available balance — sits just below the sell row
-            availableBalanceLabel.topAnchor.constraint(equalTo: sellIconView.bottomAnchor, constant: 4),
+            
+            // Available balance — below receive row
+            availableBalanceLabel.topAnchor.constraint(equalTo: sellAmountLabel.bottomAnchor, constant: 12),
             availableBalanceLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             availableBalanceLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
-
-            // Divider
-            rowDivider.topAnchor.constraint(equalTo: availableBalanceLabel.bottomAnchor, constant: 4),
+            
+            // Divider — directly below sell row
+            rowDivider.topAnchor.constraint(equalTo: availableBalanceLabel.bottomAnchor, constant: 12),
             rowDivider.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             rowDivider.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
             rowDivider.heightAnchor.constraint(equalToConstant: 0.5),
 
-            // Receive row
+            // Receive row — directly below divider
             receiveIconView.topAnchor.constraint(equalTo: rowDivider.bottomAnchor, constant: 8),
             receiveIconView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             receiveIconView.widthAnchor.constraint(equalToConstant: Layout.iconSize),
@@ -341,7 +342,7 @@ final class ExchangeViewController: UIViewController {
             receiveAmountLabel.leadingAnchor.constraint(greaterThanOrEqualTo: receiveTitleLabel.trailingAnchor, constant: 8),
 
             // Commission
-            commissionInfoLabel.topAnchor.constraint(equalTo: receiveIconView.bottomAnchor, constant: 10),
+            commissionInfoLabel.topAnchor.constraint(greaterThanOrEqualTo: receiveAmountLabel.bottomAnchor, constant: 4),
             commissionInfoLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
             // Submit button

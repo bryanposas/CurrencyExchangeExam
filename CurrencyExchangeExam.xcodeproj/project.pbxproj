@@ -27,7 +27,7 @@
 		0E73CF142FD921C600A52520 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF052FD921C500A52520 /* Constants.swift */; };
 		0E73CF152FD921C600A52520 /* BalanceCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF072FD921C500A52520 /* BalanceCardView.swift */; };
 		0E73CF162FD921C600A52520 /* CurrencyPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */; };
-		0E73CF172FD921C600A52520 /* CurrencyExchangeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF0A2FD921C500A52520 /* CurrencyExchangeViewModel.swift */; };
+		0E73CF172FD921C600A52520 /* ExchangeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF0A2FD921C500A52520 /* ExchangeViewModel.swift */; };
 		0E73CF182FD921C600A52520 /* CurrencyExchangeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF0C2FD921C500A52520 /* CurrencyExchangeManager.swift */; };
 		0E73CF192FD921C600A52520 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF0D2FD921C500A52520 /* ExchangeRateService.swift */; };
 		0E73CF1A2FD921C600A52520 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF0F2FD921C500A52520 /* AppError.swift */; };
@@ -82,7 +82,7 @@
 		0E73CF052FD921C500A52520 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		0E73CF072FD921C500A52520 /* BalanceCardView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalanceCardView.swift; sourceTree = "<group>"; };
 		0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyPickerViewController.swift; sourceTree = "<group>"; };
-		0E73CF0A2FD921C500A52520 /* CurrencyExchangeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeViewModel.swift; sourceTree = "<group>"; };
+		0E73CF0A2FD921C500A52520 /* ExchangeViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExchangeViewModel.swift; sourceTree = "<group>"; };
 		0E73CF0C2FD921C500A52520 /* CurrencyExchangeManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeManager.swift; sourceTree = "<group>"; };
 		0E73CF0D2FD921C500A52520 /* ExchangeRateService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		0E73CF0F2FD921C500A52520 /* AppError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
@@ -137,6 +137,7 @@
 		0E569B4F2FD9704400DD5EBA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */,
 				0E569B502FD9708C00DD5EBA /* CircleIconView.swift */,
 				0E000B032FD921C500A52520 /* ConnectionStatusBanner.swift */,
 			);
@@ -172,7 +173,6 @@
 				0E73CF112FD921C500A52520 /* Models */,
 				0E73CF062FD921C500A52520 /* Resources */,
 				0E73CF0E2FD921C500A52520 /* Services */,
-				0E73CF0B2FD921C500A52520 /* ViewModels */,
 				0E73CF092FD921C500A52520 /* Views */,
 				0E569B472FD93D7500DD5EBA /* Controllers */,
 				0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */,
@@ -227,21 +227,13 @@
 				0E569B4F2FD9704400DD5EBA /* Components */,
 				0E73CF072FD921C500A52520 /* BalanceCardView.swift */,
 				0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */,
-				0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */,
+				0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */,
 				0E73CF232FD921C500A52520 /* ExchangeViewController.swift */,
+				0E73CF0A2FD921C500A52520 /* ExchangeViewModel.swift */,
 				0E6B47742FD904F50004DE00 /* BalancesViewController.swift */,
+				0E000A032FD921C500A52520 /* BalancesViewModel.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		0E73CF0B2FD921C500A52520 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				0E73CF0A2FD921C500A52520 /* CurrencyExchangeViewModel.swift */,
-				0E000A032FD921C500A52520 /* BalancesViewModel.swift */,
-				0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */,
-			);
-			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		0E73CF0E2FD921C500A52520 /* Services */ = {
@@ -422,7 +414,7 @@
 				0E73CF1E2FD921C600A52520 /* AlertPresenter.swift in Sources */,
 				0E73CF1B2FD921C600A52520 /* Currency.swift in Sources */,
 				0E73CF162FD921C600A52520 /* CurrencyPickerViewController.swift in Sources */,
-				0E73CF172FD921C600A52520 /* CurrencyExchangeViewModel.swift in Sources */,
+				0E73CF172FD921C600A52520 /* ExchangeViewModel.swift in Sources */,
 				0E73CF152FD921C600A52520 /* BalanceCardView.swift in Sources */,
 				0E73CF242FD921C600A52520 /* ExchangeViewController.swift in Sources */,
 				0E73CF262FD921C600A52520 /* BalanceDetailViewController.swift in Sources */,
