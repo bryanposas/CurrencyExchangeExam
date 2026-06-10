@@ -89,9 +89,9 @@ final class ExchangeRatesTests: XCTestCase {
 
         XCTAssertEqual(decoded.base, "USD")
         XCTAssertEqual(decoded.date, "2026-06-10 00:00:00+00")
-        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "EUR" })?.value, 0.9209, accuracy: 0.0001)
-        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "GBP" })?.value, 0.7911, accuracy: 0.0001)
-        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "JPY" })?.value, 157.25, accuracy: 0.01)
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "EUR" })?.value ?? 0.0, 0.9209, accuracy: 0.0001)
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "GBP" })?.value ?? 0.0, 0.7911, accuracy: 0.0001)
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "JPY" })?.value ?? 0.0, 157.25, accuracy: 0.01)
     }
 
     func testDecoding_SkipsMalformedRateValues() throws {

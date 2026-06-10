@@ -8,7 +8,7 @@
 import Foundation
 
 /// Service for fetching exchange rates from the API
-final class ExchangeRateService {
+class ExchangeRateService {
     // MARK: - Constants
     private enum Constants {
         static let apiKey = "ae277159399e4d0eadfb4903b20ca5aa"

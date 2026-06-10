@@ -104,10 +104,10 @@ final class AlertPresenterTests: XCTestCase {
             commission: 2.51
         ) { }
 
-        XCTAssertEqual(mock.capturedSellAmount, 250.50, accuracy: 0.001)
+        XCTAssertEqual(mock.capturedSellAmount ?? 0.0, 250.50, accuracy: 0.001)
         XCTAssertEqual(mock.capturedSellCurrency, "EUR")
         XCTAssertEqual(mock.capturedReceiveText, "272.89 USD")
-        XCTAssertEqual(mock.capturedCommission, 2.51, accuracy: 0.001)
+        XCTAssertEqual(mock.capturedCommission ?? 0.0, 2.51, accuracy: 0.001)
     }
 
     func testShowExchangeConfirmation_OnConfirmCallbackIsInvoked() {

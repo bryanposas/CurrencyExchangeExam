@@ -29,6 +29,8 @@
 		0E73CF1C2FD921C600A52520 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF122FD921C500A52520 /* UIViewController+Extensions.swift */; };
 		0E73CF1E2FD921C600A52520 /* AlertPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF1D2FD921C500A52520 /* AlertPresenter.swift */; };
 		0E73CF222FD921C600A52520 /* AlertPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF212FD921C500A52520 /* AlertPresenterTests.swift */; };
+		0E73CF242FD921C600A52520 /* ExchangeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF232FD921C500A52520 /* ExchangeViewController.swift */; };
+		0E73CF262FD921C600A52520 /* BalanceDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +78,8 @@
 		0E73CF122FD921C500A52520 /* UIViewController+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extensions.swift"; sourceTree = "<group>"; };
 		0E73CF1D2FD921C500A52520 /* AlertPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
 		0E73CF212FD921C500A52520 /* AlertPresenterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AlertPresenterTests.swift; sourceTree = "<group>"; };
+		0E73CF232FD921C500A52520 /* ExchangeViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExchangeViewController.swift; sourceTree = "<group>"; };
+		0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalanceDetailViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,8 +196,10 @@
 		0E73CF092FD921C500A52520 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */,
 				0E73CF072FD921C500A52520 /* BalanceCardView.swift */,
 				0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */,
+				0E73CF232FD921C500A52520 /* ExchangeViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -383,6 +389,8 @@
 				0E73CF162FD921C600A52520 /* CurrencyPickerViewController.swift in Sources */,
 				0E73CF172FD921C600A52520 /* CurrencyExchangeViewModel.swift in Sources */,
 				0E73CF152FD921C600A52520 /* BalanceCardView.swift in Sources */,
+				0E73CF242FD921C600A52520 /* ExchangeViewController.swift in Sources */,
+				0E73CF262FD921C600A52520 /* BalanceDetailViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
