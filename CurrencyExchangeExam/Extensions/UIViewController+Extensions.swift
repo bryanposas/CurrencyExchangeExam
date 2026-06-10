@@ -7,22 +7,6 @@
 
 import UIKit
 
-extension UIViewController {
-    /// Present an error alert to the user
-    func showErrorAlert(title: String, message: String, completion: (() -> Void)? = nil) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Dismiss", style: .default) { _ in completion?() })
-        present(alert, animated: true)
-    }
-    
-    /// Present a success alert to the user
-    func showSuccessAlert(title: String, message: String, completion: (() -> Void)? = nil) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completion?() })
-        present(alert, animated: true)
-    }
-}
-
 extension Double {
     /// Format as currency string
     func formattedCurrency(code: String = "USD") -> String {

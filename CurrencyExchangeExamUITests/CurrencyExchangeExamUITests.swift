@@ -9,33 +9,119 @@ import XCTest
 
 final class CurrencyExchangeExamUITests: XCTestCase {
 
+    var app: XCUIApplication!
+
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        app = XCUIApplication()
+        app.launch()
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        app = nil
     }
 
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+    // MARK: - Helpers
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-
-    func testLaunchPerformance() throws {
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // This measures how long it takes to launch your application.
-            measure(metrics: [XCTApplicationLaunchMetric()]) {
-                XCUIApplication().launch()
-            }
+    private func enterAmount(_ digits: [String]) {
+        for digit in digits {
+            app.buttons[digit].firstMatch.tap()
         }
+    }
+
+    private func tapExchangeButton() {
+        app.buttons["Exchange"].firstMatch.tap()
+    }
+
+    // MARK: - Confirmation Alert Appearance
+
+    func testConfirmationAlertAppearsAfterTappingExchange() {
+        enterAmount(["1", "0", "0"])
+        tapExchangeButton()
+
+        let alert = app.alerts["Confirm Exchange"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 3), "Confirmation alert should appear")
+    }
+
+    func testConfirmationAlertShowsCancelAndConfirmButtons() {
+        enterAmount(["5", "0"])
+        tapExchangeButton()
+
+        let alert = app.alerts["Confirm Exchange"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 3))
+        XCTAssertTrue(alert.buttons["Cancel"].exists)
+        XCTAssertTrue(alert.buttons["Confirm"].exists)
+    }
+
+    func testConfirmationAlertMessageContainsSellInfo() {
+        enterAmount(["1", "0", "0"])
+        tapExchangeButton()
+
+        let alert = app.alerts["Confirm Exchange"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 3))
+        XCTAssertTrue(alert.staticTexts.element.label.contains("Sell:"))
+        XCTAssertTrue(alert.staticTexts.element.label.contains("Commission fee:"))
+    }
+
+    // MARK: - Cancel Path
+
+    func testCancelDismissesConfirmationAlert() {
+        enterAmount(["2", "0", "0"])
+        tapExchangeButton()
+
+        let alert = app.alerts["Confirm Exchange"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 3))
+
+        alert.buttons["Cancel"].tap()
+
+        XCTAssertFalse(alert.exists, "Alert should be dismissed after tapping Cancel")
+    }
+
+    func testCancelDoesNotChangeBalance() {
+        let initialBalance = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'USD'")).firstMatch.label
+
+        enterAmount(["5", "0"])
+        tapExchangeButton()
+        app.alerts["Confirm Exchange"].buttons["Cancel"].tap()
+
+        let balanceAfterCancel = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'USD'")).firstMatch.label
+        XCTAssertEqual(initialBalance, balanceAfterCancel, "Balance should not change after cancelling")
+    }
+
+    // MARK: - Confirm Path
+
+    func testConfirmShowsSuccessAlert() {
+        enterAmount(["1", "0", "0"])
+        tapExchangeButton()
+
+        let confirmationAlert = app.alerts["Confirm Exchange"]
+        XCTAssertTrue(confirmationAlert.waitForExistence(timeout: 3))
+        confirmationAlert.buttons["Confirm"].tap()
+
+        let successAlert = app.alerts["Exchange Successful"]
+        XCTAssertTrue(successAlert.waitForExistence(timeout: 5), "Success alert should appear after confirming exchange")
+    }
+
+    func testConfirmSuccessAlertShowsOKButton() {
+        enterAmount(["5", "0"])
+        tapExchangeButton()
+
+        app.alerts["Confirm Exchange"].waitForExistence(timeout: 3)
+        app.alerts["Confirm Exchange"].buttons["Confirm"].tap()
+
+        let successAlert = app.alerts["Exchange Successful"]
+        XCTAssertTrue(successAlert.waitForExistence(timeout: 5))
+        XCTAssertTrue(successAlert.buttons["OK"].exists)
+        successAlert.buttons["OK"].tap()
+    }
+
+    // MARK: - Invalid Amount Guard
+
+    func testExchangeWithZeroAmountShowsInvalidAlert() {
+        // Default state has "0" — tap Exchange without entering anything
+        tapExchangeButton()
+
+        let invalidAlert = app.alerts["Invalid Amount"]
+        XCTAssertTrue(invalidAlert.waitForExistence(timeout: 3), "Invalid amount alert should appear for zero input")
     }
 }

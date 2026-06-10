@@ -44,6 +44,7 @@ final class CurrencyExchangeViewController: UIViewController {
 
     // MARK: - Properties
     private let viewModel: CurrencyExchangeViewModel
+    private let alertPresenter: AlertPresenting
     private var sellCurrency: String = Constants.Account.initialCurrency
     private var receiveCurrency: String = "EUR"
     private var activeCurrencySlot: CurrencySlot = .sell
@@ -54,8 +55,10 @@ final class CurrencyExchangeViewController: UIViewController {
 
     // MARK: - Init
 
-    init(viewModel: CurrencyExchangeViewModel = CurrencyExchangeViewModel()) {
+    init(viewModel: CurrencyExchangeViewModel = CurrencyExchangeViewModel(),
+         alertPresenter: AlertPresenting = AlertPresenter()) {
         self.viewModel = viewModel
+        self.alertPresenter = alertPresenter
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -437,16 +440,24 @@ final class CurrencyExchangeViewController: UIViewController {
 
     @objc private func submitTapped() {
         guard let amount = Double(amountString), amount > 0 else {
-            showAlert(title: "Invalid Amount", message: "Please enter a valid amount.")
+            alertPresenter.showAlert(on: self, title: "Invalid Amount", message: "Please enter a valid amount.")
             return
         }
-        viewModel.performExchange(amount: amount, from: sellCurrency, to: receiveCurrency)
-    }
 
-    private func showAlert(title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        let commission = amount * Constants.Account.commissionRate
+        let convertedAmount = viewModel.calculateExchangeAmount(amount: amount, from: sellCurrency, to: receiveCurrency)
+        let receiveText = convertedAmount.map { String(format: "%.2f %@", $0, receiveCurrency) } ?? "---"
+
+        alertPresenter.showExchangeConfirmation(
+            on: self,
+            sellAmount: amount,
+            sellCurrency: sellCurrency,
+            receiveText: receiveText,
+            commission: commission
+        ) { [weak self] in
+            guard let self else { return }
+            self.viewModel.performExchange(amount: amount, from: self.sellCurrency, to: self.receiveCurrency)
+        }
     }
 }
 
@@ -475,13 +486,13 @@ extension CurrencyExchangeViewController: CurrencyExchangeViewModelDelegate {
                 transaction.toAmount, transaction.toCurrency,
                 transaction.commissionAmount, transaction.fromCurrency
             )
-            self.showAlert(title: "Exchange Successful", message: msg)
+            self.alertPresenter.showAlert(on: self, title: "Exchange Successful", message: msg)
         }
     }
 
     func viewModelDidEncounterError(_ error: AppError) {
         DispatchQueue.main.async {
-            self.showAlert(title: "Error", message: error.errorDescription ?? "An error occurred.")
+            self.alertPresenter.showAlert(on: self, title: "Error", message: error.errorDescription ?? "An error occurred.")
         }
     }
 
