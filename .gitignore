@@ -62,4 +62,4 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 
 # API secrets — never commit the real xcconfig
-Secrets.xcconfig
+#Secrets.xcconfig
