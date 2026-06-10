@@ -4,28 +4,15 @@
 //
 //  Created by Macintosh HD on 6/10/26.
 //
-//  Reusable modal view controller encapsulating the entire currency-exchange
-//  interaction: amount entry via numpad, sell/receive currency selection,
-//  confirmation alert, and success/error handling.
-//
-//  Design notes:
-//  - Accepts an injected CurrencyExchangeViewModel so it always operates on
-//    the same shared account state as the rest of the app.
-//  - Sets itself as the viewModel delegate on viewWillAppear. The caller's
-//    viewWillAppear (triggered on modal dismiss) restores its own delegation.
-//  - Presented as a pageSheet — wrap in UINavigationController before presenting.
+//  Reusable modal for performing a currency exchange. The sell currency is fixed
+//  to the one passed via `initialSellCurrency`; only the receive currency is selectable.
+//  Wrap in UINavigationController before presenting as a pageSheet.
 
 import UIKit
 
 // MARK: - ExchangeViewController
 
-/// Modal view controller for performing a currency exchange.
-/// Pass `initialSellCurrency` to pre-select the sell side.
 final class ExchangeViewController: UIViewController {
-
-    // MARK: - Types
-
-    private enum CurrencySlot { case sell, receive }
 
     // MARK: - UI: Navigation
 
@@ -36,7 +23,7 @@ final class ExchangeViewController: UIViewController {
     private let sellIconView = CircleIconView(color: .systemRed, arrowUp: true)
     private let sellTitleLabel = UILabel()
     private let sellAmountLabel = UILabel()
-    private let sellCurrencyButton = UIButton(type: .system)
+    private let sellCurrencyLabel = UILabel()
 
     private let rowDivider = UIView()
 
@@ -62,13 +49,11 @@ final class ExchangeViewController: UIViewController {
     /// via viewWillAppear (e.g. pageSheet presenters).
     var onExchangeCompleted: (() -> Void)?
 
-    private let viewModel: CurrencyExchangeViewModel
+    private let viewModel: ExchangeViewModel
     private let alertPresenter: AlertPresenting
-    private var sellCurrency: String
+    private let sellCurrency: String
     private var receiveCurrency: String
-    private var activeCurrencySlot: CurrencySlot = .sell
 
-    /// Bound amount string; any change triggers a live preview update.
     private var amountString: String = "0" {
         didSet { updateAmountDisplays() }
     }
@@ -76,13 +61,12 @@ final class ExchangeViewController: UIViewController {
     // MARK: - Init
 
     init(
-        viewModel: CurrencyExchangeViewModel,
+        viewModel: ExchangeViewModel,
         initialSellCurrency: String = Constants.Account.initialCurrency,
         alertPresenter: AlertPresenting = AlertPresenter()
     ) {
         self.viewModel = viewModel
         self.sellCurrency = initialSellCurrency
-        // Default receive to EUR unless selling EUR, then use USD
         self.receiveCurrency = initialSellCurrency == "EUR" ? "USD" : "EUR"
         self.alertPresenter = alertPresenter
         super.init(nibName: nil, bundle: nil)
@@ -104,8 +88,8 @@ final class ExchangeViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Take delegate ownership while this modal is on screen.
-        viewModel.setDelegate(self)
+        viewModel.delegate = self
+        viewModel.refreshRatesIfNeeded()
         updateAmountDisplays()
     }
 
@@ -144,8 +128,9 @@ final class ExchangeViewController: UIViewController {
         sellAmountLabel.textColor = .label
         sellAmountLabel.textAlignment = .right
 
-        configureCurrencyButton(sellCurrencyButton, currency: sellCurrency)
-        sellCurrencyButton.addTarget(self, action: #selector(sellCurrencyTapped), for: .touchUpInside)
+        sellCurrencyLabel.text = sellCurrency
+        sellCurrencyLabel.font = .systemFont(ofSize: 17, weight: .medium)
+        sellCurrencyLabel.textColor = .label
 
         rowDivider.backgroundColor = .separator
 
@@ -166,7 +151,7 @@ final class ExchangeViewController: UIViewController {
         commissionInfoLabel.textColor = .secondaryLabel
         commissionInfoLabel.textAlignment = .center
 
-        [sellIconView, sellTitleLabel, sellAmountLabel, sellCurrencyButton,
+        [sellIconView, sellTitleLabel, sellAmountLabel, sellCurrencyLabel,
          rowDivider,
          receiveIconView, receiveTitleLabel, receiveAmountLabel, receiveCurrencyButton,
          commissionInfoLabel].forEach(addToView)
@@ -270,11 +255,11 @@ final class ExchangeViewController: UIViewController {
             sellTitleLabel.centerYAnchor.constraint(equalTo: sellIconView.centerYAnchor),
             sellTitleLabel.leadingAnchor.constraint(equalTo: sellIconView.trailingAnchor, constant: 12),
 
-            sellCurrencyButton.centerYAnchor.constraint(equalTo: sellIconView.centerYAnchor),
-            sellCurrencyButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
+            sellCurrencyLabel.centerYAnchor.constraint(equalTo: sellIconView.centerYAnchor),
+            sellCurrencyLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
 
             sellAmountLabel.centerYAnchor.constraint(equalTo: sellIconView.centerYAnchor),
-            sellAmountLabel.trailingAnchor.constraint(equalTo: sellCurrencyButton.leadingAnchor, constant: -8),
+            sellAmountLabel.trailingAnchor.constraint(equalTo: sellCurrencyLabel.leadingAnchor, constant: -8),
             sellAmountLabel.leadingAnchor.constraint(greaterThanOrEqualTo: sellTitleLabel.trailingAnchor, constant: 8),
 
             // Divider
@@ -353,7 +338,7 @@ final class ExchangeViewController: UIViewController {
                 amountString = key
             } else if let dot = amountString.firstIndex(of: "."),
                       amountString.distance(from: dot, to: amountString.endIndex) > 2 {
-                break // Limit to 2 decimal places
+                break
             } else {
                 amountString += key
             }
@@ -383,13 +368,7 @@ final class ExchangeViewController: UIViewController {
         handleNumpadKey(sender.accessibilityIdentifier ?? "")
     }
 
-    @objc private func sellCurrencyTapped() {
-        activeCurrencySlot = .sell
-        presentCurrencyPicker()
-    }
-
     @objc private func receiveCurrencyTapped() {
-        activeCurrencySlot = .receive
         presentCurrencyPicker()
     }
 
@@ -433,16 +412,14 @@ final class ExchangeViewController: UIViewController {
     }
 }
 
-// MARK: - CurrencyExchangeViewModelDelegate
+// MARK: - ExchangeViewModelDelegate
 
-extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
-    func viewModelDidUpdateBalances() {}
-
-    func viewModelDidUpdateRates() {
+extension ExchangeViewController: ExchangeViewModelDelegate {
+    func exchangeViewModelDidUpdateRates() {
         DispatchQueue.main.async { self.updateAmountDisplays() }
     }
 
-    func viewModelDidCompleteExchange(_ transaction: ExchangeTransaction) {
+    func exchangeViewModelDidCompleteExchange(_ transaction: ExchangeTransaction) {
         DispatchQueue.main.async {
             self.amountString = "0"
             let msg = String(
@@ -458,8 +435,6 @@ extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
             )
             alert.addAction(UIAlertAction(title: Strings.okButton, style: .default) { [weak self] _ in
                 guard let self else { return }
-                // Notify before dismissing so the presenter can refresh its data
-                // while the modal animation is still in progress.
                 self.onExchangeCompleted?()
                 self.dismiss(animated: true)
             })
@@ -467,7 +442,7 @@ extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
         }
     }
 
-    func viewModelDidEncounterError(_ error: AppError) {
+    func exchangeViewModelDidEncounterError(_ error: AppError) {
         DispatchQueue.main.async {
             self.alertPresenter.showAlert(
                 on: self,
@@ -477,7 +452,7 @@ extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
         }
     }
 
-    func viewModelIsLoadingRates(_ isLoading: Bool) {
+    func exchangeViewModelIsLoadingRates(_ isLoading: Bool) {
         DispatchQueue.main.async {
             isLoading
                 ? self.loadingIndicator.startAnimating()
@@ -490,14 +465,8 @@ extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
 
 extension ExchangeViewController: CurrencyPickerDelegate {
     func currencyPickerDidSelect(_ currency: String) {
-        switch activeCurrencySlot {
-        case .sell:
-            sellCurrency = currency
-            configureCurrencyButton(sellCurrencyButton, currency: currency)
-        case .receive:
-            receiveCurrency = currency
-            configureCurrencyButton(receiveCurrencyButton, currency: currency)
-        }
+        receiveCurrency = currency
+        configureCurrencyButton(receiveCurrencyButton, currency: currency)
         updateAmountDisplays()
     }
 }
@@ -533,7 +502,6 @@ private enum Layout {
 
 // MARK: - CircleIconView
 
-/// Circular icon with an up or down arrow, used to indicate sell/receive direction.
 private final class CircleIconView: UIView {
 
     init(color: UIColor, arrowUp: Bool) {

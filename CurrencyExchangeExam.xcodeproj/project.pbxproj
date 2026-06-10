@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E000A022FD921C600A52520 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A012FD921C500A52520 /* NetworkClient.swift */; };
+		0E000A042FD921C600A52520 /* BalancesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A032FD921C500A52520 /* BalancesViewModel.swift */; };
+		0E000A062FD921C600A52520 /* BalanceDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */; };
 		0E569B4B2FD93EFF00DD5EBA /* ExchangeRatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B482FD93EFE00DD5EBA /* ExchangeRatesTests.swift */; };
 		0E569B4C2FD93EFF00DD5EBA /* AccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B492FD93EFE00DD5EBA /* AccountTests.swift */; };
 		0E569B4D2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */; };
@@ -51,6 +54,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0E000A012FD921C500A52520 /* NetworkClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
+		0E000A032FD921C500A52520 /* BalancesViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalancesViewModel.swift; sourceTree = "<group>"; };
+		0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalanceDetailViewModel.swift; sourceTree = "<group>"; };
 		0E569B482FD93EFE00DD5EBA /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
 		0E569B492FD93EFE00DD5EBA /* AccountTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountTests.swift; sourceTree = "<group>"; };
 		0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeManagerTests.swift; sourceTree = "<group>"; };
@@ -112,6 +118,14 @@
 			children = (
 			);
 			path = Controllers;
+			sourceTree = "<group>";
+		};
+		0E569B4E2FD9630C00DD5EBA /* NetworkClient */ = {
+			isa = PBXGroup;
+			children = (
+				0E000A012FD921C500A52520 /* NetworkClient.swift */,
+			);
+			path = NetworkClient;
 			sourceTree = "<group>";
 		};
 		0E6B47642FD904F50004DE00 = {
@@ -208,6 +222,8 @@
 			isa = PBXGroup;
 			children = (
 				0E73CF0A2FD921C500A52520 /* CurrencyExchangeViewModel.swift */,
+				0E000A032FD921C500A52520 /* BalancesViewModel.swift */,
+				0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -215,6 +231,7 @@
 		0E73CF0E2FD921C500A52520 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				0E569B4E2FD9630C00DD5EBA /* NetworkClient */,
 				0E73CF0C2FD921C500A52520 /* CurrencyExchangeManager.swift */,
 				0E73CF0D2FD921C500A52520 /* ExchangeRateService.swift */,
 			);
@@ -391,6 +408,9 @@
 				0E73CF152FD921C600A52520 /* BalanceCardView.swift in Sources */,
 				0E73CF242FD921C600A52520 /* ExchangeViewController.swift in Sources */,
 				0E73CF262FD921C600A52520 /* BalanceDetailViewController.swift in Sources */,
+				0E000A022FD921C600A52520 /* NetworkClient.swift in Sources */,
+				0E000A042FD921C600A52520 /* BalancesViewModel.swift in Sources */,
+				0E000A062FD921C600A52520 /* BalanceDetailViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

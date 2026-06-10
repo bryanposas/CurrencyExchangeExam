@@ -4,20 +4,13 @@
 //
 //  Created by Macintosh HD on 6/10/26.
 //
-//  This file contains BalancesViewController — the root screen that displays
-//  each currency balance as a tappable card. Tapping a card navigates to
-//  BalanceDetailViewController, which provides the exchange entry point.
-//
-//  Architectural note: the shared CurrencyExchangeViewModel is injected here
-//  and passed down through the navigation stack so every screen operates on
-//  the same account state without any singleton or shared-state coupling.
+//  Root screen displaying each currency balance as a tappable card.
+//  Owns a BalancesViewModel; navigates to BalanceDetailViewController on card tap.
 
 import UIKit
 
 // MARK: - BalancesViewController
 
-/// Root screen displaying all currency balances as scrollable cards.
-/// Refreshes cards on `viewWillAppear` to reflect changes made on child screens.
 final class BalancesViewController: UIViewController {
 
     // MARK: - UI
@@ -28,13 +21,13 @@ final class BalancesViewController: UIViewController {
 
     // MARK: - Properties
 
-    private let viewModel: CurrencyExchangeViewModel
+    private let viewModel: BalancesViewModel
     private let alertPresenter: AlertPresenting
 
     // MARK: - Init
 
     init(
-        viewModel: CurrencyExchangeViewModel = CurrencyExchangeViewModel(),
+        viewModel: BalancesViewModel,
         alertPresenter: AlertPresenting = AlertPresenter()
     ) {
         self.viewModel = viewModel
@@ -50,24 +43,20 @@ final class BalancesViewController: UIViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupScrollLayout()
-        viewModel.setDelegate(self)
+        viewModel.delegate = self
         viewModel.refreshExchangeRates()
         refreshBalanceCards()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Reclaim delegate ownership whenever this screen becomes active.
-        // Child screens (ExchangeViewController) temporarily take over the
-        // delegate while they are visible; returning here restores it.
-        viewModel.setDelegate(self)
         refreshBalanceCards()
     }
 
     // MARK: - Navigation Bar
 
     private func setupNavigationBar() {
-        title = Strings.Balances.navTitle
+        title = Strings.navTitle
 
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -127,37 +116,36 @@ final class BalancesViewController: UIViewController {
     // MARK: - Navigation
 
     private func navigateToDetail(currency: String) {
-        let detailVC = BalanceDetailViewController(currency: currency, viewModel: viewModel)
+        let detailVC = BalanceDetailViewController(
+            currency: currency,
+            viewModel: viewModel.makeDetailViewModel()
+        )
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
 
-// MARK: - CurrencyExchangeViewModelDelegate
+// MARK: - BalancesViewModelDelegate
 
-extension BalancesViewController: CurrencyExchangeViewModelDelegate {
-    func viewModelDidUpdateBalances() {
+extension BalancesViewController: BalancesViewModelDelegate {
+    func balancesViewModelDidFinishRefreshing() {
         DispatchQueue.main.async { self.refreshBalanceCards() }
     }
 
-    func viewModelDidUpdateRates() {}
-
-    func viewModelDidCompleteExchange(_ transaction: ExchangeTransaction) {}
-
-    func viewModelDidEncounterError(_ error: AppError) {
-        DispatchQueue.main.async {
-            self.alertPresenter.showAlert(
-                on: self,
-                title: Strings.Error.title,
-                message: error.errorDescription ?? Strings.Error.generic
-            )
-        }
-    }
-
-    func viewModelIsLoadingRates(_ isLoading: Bool) {
+    func balancesViewModelIsLoadingRates(_ isLoading: Bool) {
         DispatchQueue.main.async {
             isLoading
                 ? self.loadingIndicator.startAnimating()
                 : self.loadingIndicator.stopAnimating()
+        }
+    }
+
+    func balancesViewModelDidEncounterError(_ error: AppError) {
+        DispatchQueue.main.async {
+            self.alertPresenter.showAlert(
+                on: self,
+                title: Strings.errorTitle,
+                message: error.errorDescription ?? Strings.errorGeneric
+            )
         }
     }
 }
@@ -165,13 +153,9 @@ extension BalancesViewController: CurrencyExchangeViewModelDelegate {
 // MARK: - Constants
 
 private enum Strings {
-    enum Balances {
-        static let navTitle = "My Balances"
-    }
-    enum Error {
-        static let title = "Error"
-        static let generic = "An error occurred."
-    }
+    static let navTitle = "My Balances"
+    static let errorTitle = "Error"
+    static let errorGeneric = "An error occurred."
 }
 
 private enum Colors {

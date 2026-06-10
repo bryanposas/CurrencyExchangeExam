@@ -7,82 +7,58 @@
 
 import Foundation
 
-/// Service for fetching exchange rates from the API
+// MARK: - ExchangeRateService
+
+/// Fetches and caches exchange rates from the remote API.
+/// Delegates the actual HTTP transport to an injected NetworkClient.
 class ExchangeRateService {
-    // MARK: - Constants
-    private enum Constants {
-        static let apiKey = "ae277159399e4d0eadfb4903b20ca5aa"
-        static let baseURL = "https://api.currencyfreaks.com/v2.0/rates/latest"
-        static let timeout: TimeInterval = 15
-    }
-    
+
     // MARK: - Properties
-    private let session: URLSession
+
+    private let networkClient: NetworkClient
     private var currentExchangeRates: ExchangeRates?
     private var lastFetchDate: Date?
-    
+
     // MARK: - Initialization
-    init(session: URLSession = .shared) {
-        self.session = session
+
+    init(networkClient: NetworkClient = URLSessionNetworkClient()) {
+        self.networkClient = networkClient
     }
-    
+
     // MARK: - Public Methods
-    
-    /// Fetch the latest exchange rates from the API
-    /// - Parameter completion: Closure called with result (rates or error)
+
     func fetchExchangeRates(completion: @escaping (Result<ExchangeRates, AppError>) -> Void) {
         guard let url = buildURL() else {
             completion(.failure(.apiKeyMissing))
             return
         }
-        
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: Constants.timeout)
+
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: Constants.API.timeout)
         request.httpMethod = "GET"
-        
-        let task = session.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
-            
-            guard let data = data else {
-                completion(.failure(.invalidResponse))
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let rates = try decoder.decode(ExchangeRates.self, from: data)
+
+        networkClient.perform(request: request) { [weak self] (result: Result<ExchangeRates, AppError>) in
+            if case .success(let rates) = result {
                 self?.currentExchangeRates = rates
                 self?.lastFetchDate = Date()
-                completion(.success(rates))
-            } catch {
-                completion(.failure(.decodingError(error)))
             }
+            completion(result)
         }
-        
-        task.resume()
     }
-    
-    /// Get cached exchange rates if available
+
     func getCachedRates() -> ExchangeRates? {
-        return currentExchangeRates
+        currentExchangeRates
     }
-    
-    /// Check if rates need refreshing (older than the specified interval)
-    func shouldRefreshRates(interval: TimeInterval = 300) -> Bool {
+
+    func shouldRefreshRates(interval: TimeInterval = Constants.API.refreshInterval) -> Bool {
         guard let lastFetch = lastFetchDate else { return true }
         return Date().timeIntervalSince(lastFetch) > interval
     }
-    
+
     // MARK: - Private Methods
-    
-    /// Build the API request URL
+
     private func buildURL() -> URL? {
-        var components = URLComponents(string: Constants.baseURL)
-        components?.queryItems = [
-            URLQueryItem(name: "apikey", value: Constants.apiKey)
-        ]
+        var components = URLComponents(string: Constants.API.baseURL + "/rates/latest")
+        components?.queryItems = [URLQueryItem(name: "apikey", value: Constants.API.apiKey)]
         return components?.url
     }
 }

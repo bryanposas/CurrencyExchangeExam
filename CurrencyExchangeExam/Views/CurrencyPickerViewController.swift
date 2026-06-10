@@ -113,6 +113,9 @@ extension CurrencyPickerViewController: UITableViewDataSource, UITableViewDelega
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         delegate?.currencyPickerDidSelect(displayedCurrencies[indexPath.row])
-        dismiss(animated: true)
+        // Dismiss the wrapping UINavigationController, not self. When UISearchController
+        // is active, calling dismiss on self dismisses the search controller first and
+        // leaves the picker visible.
+        navigationController?.dismiss(animated: true)
     }
 }

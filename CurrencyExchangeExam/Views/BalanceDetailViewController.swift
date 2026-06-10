@@ -7,25 +7,15 @@
 //  Displays the balance for a single currency and lists all transactions
 //  involving that currency, grouped by date. Provides an entry point to
 //  ExchangeViewController via the "Exchange Currency" button.
-//
-//  Design notes:
-//  - Pulls balance and transaction data from the shared ViewModel on every
-//    viewWillAppear, so it always reflects exchanges performed in the modal.
-//  - Does NOT become the viewModel delegate — data is read via direct calls,
-//    keeping the delegate chain simple (ExchangeViewController owns it while
-//    the modal is visible; BalancesViewController owns it otherwise).
 
 import UIKit
 
 // MARK: - BalanceDetailViewController
 
-/// Detail screen for a single currency: shows available balance, an exchange
-/// button, and a chronological transaction history.
 final class BalanceDetailViewController: UIViewController {
 
     // MARK: - Types
 
-    /// Flat representation of a transaction row for display purposes.
     private struct TransactionRow {
         let title: String
         let subtitle: String
@@ -41,14 +31,12 @@ final class BalanceDetailViewController: UIViewController {
     // MARK: - Properties
 
     private let currency: String
-    private let viewModel: CurrencyExchangeViewModel
-
-    /// Transactions grouped by formatted date string, e.g. [("JUN 10", [rows...])].
+    private let viewModel: BalanceDetailViewModel
     private var sections: [(date: String, rows: [TransactionRow])] = []
 
     // MARK: - Init
 
-    init(currency: String, viewModel: CurrencyExchangeViewModel) {
+    init(currency: String, viewModel: BalanceDetailViewModel) {
         self.currency = currency
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -68,8 +56,6 @@ final class BalanceDetailViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Pull latest data every time this screen becomes visible —
-        // covers the case where the exchange modal just completed a trade.
         refreshBalance()
         refreshTransactions()
     }
@@ -100,8 +86,6 @@ final class BalanceDetailViewController: UIViewController {
 
     // MARK: - Header Sizing
 
-    /// Recalculates the tableHeaderView height using Auto Layout so the header
-    /// grows/shrinks correctly across device sizes without hardcoded heights.
     private func sizeTableHeaderView() {
         let targetSize = CGSize(
             width: tableView.bounds.width,
@@ -126,13 +110,10 @@ final class BalanceDetailViewController: UIViewController {
     }
 
     private func refreshTransactions() {
-        let all = viewModel.getTransactionHistory()
-        let relevant = all.filter { $0.fromCurrency == currency || $0.toCurrency == currency }
-        sections = grouped(transactions: relevant)
+        sections = grouped(transactions: viewModel.getTransactions(for: currency))
         tableView.reloadData()
     }
 
-    /// Groups a flat list of transactions into date-keyed sections.
     private func grouped(transactions: [ExchangeTransaction]) -> [(date: String, rows: [TransactionRow])] {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM d"
@@ -169,7 +150,10 @@ final class BalanceDetailViewController: UIViewController {
     // MARK: - Navigation
 
     private func openExchangeModal() {
-        let exchangeVC = ExchangeViewController(viewModel: viewModel, initialSellCurrency: currency)
+        let exchangeVC = ExchangeViewController(
+            viewModel: viewModel.makeExchangeViewModel(),
+            initialSellCurrency: currency
+        )
         exchangeVC.onExchangeCompleted = { [weak self] in
             self?.refreshBalance()
             self?.refreshTransactions()
@@ -187,15 +171,15 @@ final class BalanceDetailViewController: UIViewController {
 
 extension BalanceDetailViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.isEmpty ? 1 : sections.count
+        sections.isEmpty ? 1 : sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections.isEmpty ? 1 : sections[section].rows.count
+        sections.isEmpty ? 1 : sections[section].rows.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sections.isEmpty ? Strings.transactionHistoryHeader : sections[section].date
+        sections.isEmpty ? Strings.transactionHistoryHeader : sections[section].date
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -223,7 +207,7 @@ extension BalanceDetailViewController: UITableViewDataSource {
 
 extension BalanceDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-        return false
+        false
     }
 }
 
@@ -239,8 +223,6 @@ private enum Strings {
 
 // MARK: - BalanceDetailHeaderView
 
-/// Header view embedded as UITableView.tableHeaderView.
-/// Shows the balance and an exchange entry button.
 private final class BalanceDetailHeaderView: UIView {
 
     // MARK: - Callback
@@ -299,57 +281,57 @@ private final class BalanceDetailHeaderView: UIView {
             addSubview($0)
         }
 
-        let p = Layout.padding
         NSLayoutConstraint.activate([
-            availableBalanceLabel.topAnchor.constraint(equalTo: topAnchor, constant: p),
-            availableBalanceLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: p),
+            availableBalanceLabel.topAnchor.constraint(equalTo: topAnchor, constant: 24),
+            availableBalanceLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 
-            amountLabel.topAnchor.constraint(equalTo: availableBalanceLabel.bottomAnchor, constant: 4),
-            amountLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: p),
-            amountLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -p),
+            amountLabel.topAnchor.constraint(equalTo: availableBalanceLabel.bottomAnchor, constant: 8),
+            amountLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            amountLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 16),
+            amountLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
 
             currencyCodeLabel.topAnchor.constraint(equalTo: amountLabel.bottomAnchor, constant: 4),
-            currencyCodeLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: p),
+            currencyCodeLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
 
             exchangeButton.topAnchor.constraint(equalTo: currencyCodeLabel.bottomAnchor, constant: 24),
-            exchangeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: p),
-            exchangeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -p),
+            exchangeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            exchangeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             exchangeButton.heightAnchor.constraint(equalToConstant: Layout.buttonHeight),
-            exchangeButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -p)
+            exchangeButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24)
         ])
     }
 
-    @objc private func exchangeButtonTapped() { onExchangeTapped?() }
-
-    private func formatted(_ amount: Double) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        return f.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
+    @objc private func exchangeButtonTapped() {
+        onExchangeTapped?()
     }
 
-    // MARK: - Constants
+    private func formatted(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
+    }
+}
 
-    private enum Strings {
+// MARK: - BalanceDetailHeaderView Constants
+
+private extension BalanceDetailHeaderView {
+    enum Strings {
         static let availableBalance = "Available balance"
         static let exchangeButtonTitle = "Exchange Currency"
     }
-
-    private enum Colors {
-        static let buttonBackground = UIColor(red: 0.37, green: 0.62, blue: 0.82, alpha: 1.0)
+    enum Colors {
+        static let buttonBackground = UIColor(red: 0.37, green: 0.62, blue: 0.82, alpha: 0.85)
     }
-
-    private enum Layout {
-        static let padding: CGFloat = 20
+    enum Layout {
         static let buttonHeight: CGFloat = 50
-        static let buttonCornerRadius: CGFloat = 12
+        static let buttonCornerRadius: CGFloat = 25
     }
 }
 
 // MARK: - TransactionCell
 
-/// Table view cell displaying a single transaction row: title, subtitle, and amount.
 private final class TransactionCell: UITableViewCell {
 
     static let reuseID = "TransactionCell"
@@ -392,25 +374,23 @@ private final class TransactionCell: UITableViewCell {
         amountLabel.font = .systemFont(ofSize: 15, weight: .medium)
         amountLabel.textAlignment = .right
         amountLabel.setContentHuggingPriority(.required, for: .horizontal)
-        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        [titleLabel, subtitleLabel, amountLabel].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            contentView.addSubview($0)
-        }
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        let rowStack = UIStackView(arrangedSubviews: [textStack, amountLabel])
+        rowStack.axis = .horizontal
+        rowStack.spacing = 8
+        rowStack.alignment = .center
+        rowStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(rowStack)
 
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: amountLabel.leadingAnchor, constant: -8),
-
-            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
-            subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            subtitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: amountLabel.leadingAnchor, constant: -8),
-            subtitleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
-
-            amountLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            amountLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+            rowStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            rowStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            rowStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            rowStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
         ])
     }
 }
