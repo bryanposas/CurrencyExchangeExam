@@ -6,6 +6,7 @@
 //
 //  Root screen displaying each currency balance as a tappable card.
 //  Owns a BalancesViewModel; navigates to BalanceDetailViewController on card tap.
+//  Displays a connectivity banner when the network is unreachable.
 
 import UIKit
 
@@ -18,19 +19,24 @@ final class BalancesViewController: UIViewController {
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
     private let scrollView = UIScrollView()
     private let stackView = UIStackView()
+    private let banner = ConnectionStatusBanner()
 
     // MARK: - Properties
 
     private let viewModel: BalancesViewModel
     private let alertPresenter: AlertPresenting
+    private let networkMonitor: NetworkMonitoring
+    private var networkMonitorToken: UUID?
 
     // MARK: - Init
 
     init(
         viewModel: BalancesViewModel,
+        networkMonitor: NetworkMonitoring,
         alertPresenter: AlertPresenting = AlertPresenter()
     ) {
         self.viewModel = viewModel
+        self.networkMonitor = networkMonitor
         self.alertPresenter = alertPresenter
         super.init(nibName: nil, bundle: nil)
     }
@@ -43,6 +49,7 @@ final class BalancesViewController: UIViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupScrollLayout()
+        setupNetworkMonitoring()
         viewModel.delegate = self
         viewModel.refreshExchangeRates()
         refreshBalanceCards()
@@ -51,6 +58,28 @@ final class BalancesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshBalanceCards()
+        if !networkMonitor.isConnected {
+            banner.show(message: Strings.networkWarning, delay: 0)
+        }
+    }
+
+    deinit {
+        if let token = networkMonitorToken {
+            networkMonitor.removeObserver(id: token)
+        }
+    }
+
+    // MARK: - Network Monitoring
+
+    private func setupNetworkMonitoring() {
+        networkMonitorToken = networkMonitor.addObserver { [weak self] isConnected in
+            guard let self else { return }
+            if isConnected {
+                self.banner.hide()
+            } else {
+                self.banner.show(message: Strings.networkWarning, delay: 3.0)
+            }
+        }
     }
 
     // MARK: - Navigation Bar
@@ -76,6 +105,16 @@ final class BalancesViewController: UIViewController {
     private func setupScrollLayout() {
         view.backgroundColor = .systemGroupedBackground
 
+        // Banner sits at the safe-area top with height 0; scrollView is pinned below it.
+        // When the banner expands it pushes the scrollView down automatically.
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(banner)
+        NSLayoutConstraint.activate([
+            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            banner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            banner.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
 
@@ -86,7 +125,7 @@ final class BalancesViewController: UIViewController {
 
         let p = Layout.padding
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: banner.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -118,7 +157,8 @@ final class BalancesViewController: UIViewController {
     private func navigateToDetail(currency: String) {
         let detailVC = BalanceDetailViewController(
             currency: currency,
-            viewModel: viewModel.makeDetailViewModel()
+            viewModel: viewModel.makeDetailViewModel(),
+            networkMonitor: networkMonitor
         )
         navigationController?.pushViewController(detailVC, animated: true)
     }
@@ -156,6 +196,7 @@ private enum Strings {
     static let navTitle = "My Balances"
     static let errorTitle = "Error"
     static let errorGeneric = "An error occurred."
+    static let networkWarning = "Exchange rates may not be up to date. Check your internet connection."
 }
 
 private enum Colors {

@@ -10,9 +10,12 @@
 		0E000A022FD921C600A52520 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A012FD921C500A52520 /* NetworkClient.swift */; };
 		0E000A042FD921C600A52520 /* BalancesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A032FD921C500A52520 /* BalancesViewModel.swift */; };
 		0E000A062FD921C600A52520 /* BalanceDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */; };
+		0E000B022FD921C600A52520 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000B012FD921C500A52520 /* NetworkMonitor.swift */; };
+		0E000B042FD921C600A52520 /* ConnectionStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E000B032FD921C500A52520 /* ConnectionStatusBanner.swift */; };
 		0E569B4B2FD93EFF00DD5EBA /* ExchangeRatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B482FD93EFE00DD5EBA /* ExchangeRatesTests.swift */; };
 		0E569B4C2FD93EFF00DD5EBA /* AccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B492FD93EFE00DD5EBA /* AccountTests.swift */; };
 		0E569B4D2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */; };
+		0E569B512FD9708C00DD5EBA /* CircleIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B502FD9708C00DD5EBA /* CircleIconView.swift */; };
 		0E6B47712FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */; };
 		0E6B47752FD904F50004DE00 /* BalancesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47742FD904F50004DE00 /* BalancesViewController.swift */; };
 		0E6B47772FD904F80004DE00 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E6B47762FD904F80004DE00 /* Assets.xcassets */; };
@@ -57,9 +60,12 @@
 		0E000A012FD921C500A52520 /* NetworkClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
 		0E000A032FD921C500A52520 /* BalancesViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalancesViewModel.swift; sourceTree = "<group>"; };
 		0E000A052FD921C500A52520 /* BalanceDetailViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BalanceDetailViewModel.swift; sourceTree = "<group>"; };
+		0E000B012FD921C500A52520 /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		0E000B032FD921C500A52520 /* ConnectionStatusBanner.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConnectionStatusBanner.swift; sourceTree = "<group>"; };
 		0E569B482FD93EFE00DD5EBA /* ExchangeRatesTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExchangeRatesTests.swift; sourceTree = "<group>"; };
 		0E569B492FD93EFE00DD5EBA /* AccountTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountTests.swift; sourceTree = "<group>"; };
 		0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeManagerTests.swift; sourceTree = "<group>"; };
+		0E569B502FD9708C00DD5EBA /* CircleIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleIconView.swift; sourceTree = "<group>"; };
 		0E6B476D2FD904F50004DE00 /* CurrencyExchangeExam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencyExchangeExam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeExamAppDelegate.swift; sourceTree = "<group>"; };
 		0E6B47742FD904F50004DE00 /* BalancesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesViewController.swift; sourceTree = "<group>"; };
@@ -126,6 +132,15 @@
 				0E000A012FD921C500A52520 /* NetworkClient.swift */,
 			);
 			path = NetworkClient;
+			sourceTree = "<group>";
+		};
+		0E569B4F2FD9704400DD5EBA /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				0E569B502FD9708C00DD5EBA /* CircleIconView.swift */,
+				0E000B032FD921C500A52520 /* ConnectionStatusBanner.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		0E6B47642FD904F50004DE00 = {
@@ -209,8 +224,9 @@
 		0E73CF092FD921C500A52520 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */,
+				0E569B4F2FD9704400DD5EBA /* Components */,
 				0E73CF072FD921C500A52520 /* BalanceCardView.swift */,
+				0E73CF252FD921C500A52520 /* BalanceDetailViewController.swift */,
 				0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */,
 				0E73CF232FD921C500A52520 /* ExchangeViewController.swift */,
 				0E6B47742FD904F50004DE00 /* BalancesViewController.swift */,
@@ -234,6 +250,7 @@
 				0E569B4E2FD9630C00DD5EBA /* NetworkClient */,
 				0E73CF0C2FD921C500A52520 /* CurrencyExchangeManager.swift */,
 				0E73CF0D2FD921C500A52520 /* ExchangeRateService.swift */,
+				0E000B012FD921C500A52520 /* NetworkMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -399,6 +416,7 @@
 				0E73CF1A2FD921C600A52520 /* AppError.swift in Sources */,
 				0E73CF182FD921C600A52520 /* CurrencyExchangeManager.swift in Sources */,
 				0E73CF142FD921C600A52520 /* Constants.swift in Sources */,
+				0E569B512FD9708C00DD5EBA /* CircleIconView.swift in Sources */,
 				0E73CF192FD921C600A52520 /* ExchangeRateService.swift in Sources */,
 				0E73CF1C2FD921C600A52520 /* UIViewController+Extensions.swift in Sources */,
 				0E73CF1E2FD921C600A52520 /* AlertPresenter.swift in Sources */,
@@ -411,6 +429,8 @@
 				0E000A022FD921C600A52520 /* NetworkClient.swift in Sources */,
 				0E000A042FD921C600A52520 /* BalancesViewModel.swift in Sources */,
 				0E000A062FD921C600A52520 /* BalanceDetailViewModel.swift in Sources */,
+				0E000B022FD921C600A52520 /* NetworkMonitor.swift in Sources */,
+				0E000B042FD921C600A52520 /* ConnectionStatusBanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

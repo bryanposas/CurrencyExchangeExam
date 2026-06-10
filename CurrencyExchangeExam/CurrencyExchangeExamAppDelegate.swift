@@ -30,9 +30,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
+        let networkMonitor = NetworkMonitor()
         let manager = CurrencyExchangeManager()
         let viewModel = BalancesViewModel(manager: manager)
-        let rootVC = BalancesViewController(viewModel: viewModel)
+        let rootVC = BalancesViewController(viewModel: viewModel, networkMonitor: networkMonitor)
         let nav = UINavigationController(rootViewController: rootVC)
 
         let window = UIWindow(windowScene: windowScene)

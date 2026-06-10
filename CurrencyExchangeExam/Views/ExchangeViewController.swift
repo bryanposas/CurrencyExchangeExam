@@ -6,6 +6,8 @@
 //
 //  Reusable modal for performing a currency exchange. The sell currency is fixed
 //  to the one passed via `initialSellCurrency`; only the receive currency is selectable.
+//  Shows a connectivity banner when network is unavailable and prevents exchange
+//  amounts that would result in a negative balance after commission is applied.
 //  Wrap in UINavigationController before presenting as a pageSheet.
 
 import UIKit
@@ -18,12 +20,17 @@ final class ExchangeViewController: UIViewController {
 
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
 
+    // MARK: - UI: Banner
+
+    private let banner = ConnectionStatusBanner()
+
     // MARK: - UI: Exchange Rows
 
     private let sellIconView = CircleIconView(color: .systemRed, arrowUp: true)
     private let sellTitleLabel = UILabel()
     private let sellAmountLabel = UILabel()
     private let sellCurrencyLabel = UILabel()
+    private let availableBalanceLabel = UILabel()
 
     private let rowDivider = UIView()
 
@@ -51,8 +58,10 @@ final class ExchangeViewController: UIViewController {
 
     private let viewModel: ExchangeViewModel
     private let alertPresenter: AlertPresenting
+    private let networkMonitor: NetworkMonitoring
     private let sellCurrency: String
     private var receiveCurrency: String
+    private var networkMonitorToken: UUID?
 
     private var amountString: String = "0" {
         didSet { updateAmountDisplays() }
@@ -63,11 +72,13 @@ final class ExchangeViewController: UIViewController {
     init(
         viewModel: ExchangeViewModel,
         initialSellCurrency: String = Constants.Account.initialCurrency,
+        networkMonitor: NetworkMonitoring,
         alertPresenter: AlertPresenting = AlertPresenter()
     ) {
         self.viewModel = viewModel
         self.sellCurrency = initialSellCurrency
         self.receiveCurrency = initialSellCurrency == "EUR" ? "USD" : "EUR"
+        self.networkMonitor = networkMonitor
         self.alertPresenter = alertPresenter
         super.init(nibName: nil, bundle: nil)
     }
@@ -83,7 +94,9 @@ final class ExchangeViewController: UIViewController {
         setupExchangeRows()
         setupSubmitButton()
         setupNumpad()
+        setupBanner()
         setupConstraints()
+        setupNetworkMonitoring()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -91,6 +104,40 @@ final class ExchangeViewController: UIViewController {
         viewModel.delegate = self
         viewModel.refreshRatesIfNeeded()
         updateAmountDisplays()
+        if !networkMonitor.isConnected {
+            banner.show(message: Strings.networkWarning, delay: 0)
+        }
+    }
+
+    deinit {
+        if let token = networkMonitorToken {
+            networkMonitor.removeObserver(id: token)
+        }
+    }
+
+    // MARK: - Banner
+
+    private func setupBanner() {
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(banner)
+        NSLayoutConstraint.activate([
+            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            banner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            banner.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+    }
+
+    // MARK: - Network Monitoring
+
+    private func setupNetworkMonitoring() {
+        networkMonitorToken = networkMonitor.addObserver { [weak self] isConnected in
+            guard let self else { return }
+            if isConnected {
+                self.banner.hide()
+            } else {
+                self.banner.show(message: Strings.networkWarning, delay: 3.0)
+            }
+        }
     }
 
     // MARK: - Navigation Bar
@@ -132,6 +179,10 @@ final class ExchangeViewController: UIViewController {
         sellCurrencyLabel.font = .systemFont(ofSize: 17, weight: .medium)
         sellCurrencyLabel.textColor = .label
 
+        availableBalanceLabel.font = .systemFont(ofSize: 12)
+        availableBalanceLabel.textColor = .secondaryLabel
+        availableBalanceLabel.textAlignment = .right
+
         rowDivider.backgroundColor = .separator
 
         receiveTitleLabel.text = Strings.receiveTitle
@@ -151,7 +202,7 @@ final class ExchangeViewController: UIViewController {
         commissionInfoLabel.textColor = .secondaryLabel
         commissionInfoLabel.textAlignment = .center
 
-        [sellIconView, sellTitleLabel, sellAmountLabel, sellCurrencyLabel,
+        [sellIconView, sellTitleLabel, sellAmountLabel, sellCurrencyLabel, availableBalanceLabel,
          rowDivider,
          receiveIconView, receiveTitleLabel, receiveAmountLabel, receiveCurrencyButton,
          commissionInfoLabel].forEach(addToView)
@@ -190,10 +241,10 @@ final class ExchangeViewController: UIViewController {
         numpadContainerView.addSubview(outerStack)
 
         for row in keys {
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.distribution = .fillEqually
-            rowStack.spacing = 1
+            let keyRow = UIStackView()
+            keyRow.axis = .horizontal
+            keyRow.distribution = .fillEqually
+            keyRow.spacing = 1
 
             for key in row {
                 let btn = UIButton(type: .system)
@@ -229,9 +280,9 @@ final class ExchangeViewController: UIViewController {
                     btn.setTitleColor(.label, for: .normal)
                     btn.titleLabel?.font = .systemFont(ofSize: 24, weight: .regular)
                 }
-                rowStack.addArrangedSubview(btn)
+                keyRow.addArrangedSubview(btn)
             }
-            outerStack.addArrangedSubview(rowStack)
+            outerStack.addArrangedSubview(keyRow)
         }
 
         NSLayoutConstraint.activate([
@@ -246,8 +297,8 @@ final class ExchangeViewController: UIViewController {
         let pad = Layout.edgePadding
 
         NSLayoutConstraint.activate([
-            // Sell row
-            sellIconView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            // Sell row — top anchored to banner so banner expansion pushes all content down.
+            sellIconView.topAnchor.constraint(equalTo: banner.bottomAnchor, constant: 24),
             sellIconView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             sellIconView.widthAnchor.constraint(equalToConstant: Layout.iconSize),
             sellIconView.heightAnchor.constraint(equalToConstant: Layout.iconSize),
@@ -262,14 +313,19 @@ final class ExchangeViewController: UIViewController {
             sellAmountLabel.trailingAnchor.constraint(equalTo: sellCurrencyLabel.leadingAnchor, constant: -8),
             sellAmountLabel.leadingAnchor.constraint(greaterThanOrEqualTo: sellTitleLabel.trailingAnchor, constant: 8),
 
+            // Available balance — sits just below the sell row
+            availableBalanceLabel.topAnchor.constraint(equalTo: sellIconView.bottomAnchor, constant: 4),
+            availableBalanceLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+            availableBalanceLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
+
             // Divider
-            rowDivider.topAnchor.constraint(equalTo: sellIconView.bottomAnchor, constant: 14),
+            rowDivider.topAnchor.constraint(equalTo: availableBalanceLabel.bottomAnchor, constant: 4),
             rowDivider.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             rowDivider.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
             rowDivider.heightAnchor.constraint(equalToConstant: 0.5),
 
             // Receive row
-            receiveIconView.topAnchor.constraint(equalTo: rowDivider.bottomAnchor, constant: 14),
+            receiveIconView.topAnchor.constraint(equalTo: rowDivider.bottomAnchor, constant: 8),
             receiveIconView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
             receiveIconView.widthAnchor.constraint(equalToConstant: Layout.iconSize),
             receiveIconView.heightAnchor.constraint(equalToConstant: Layout.iconSize),
@@ -347,6 +403,20 @@ final class ExchangeViewController: UIViewController {
 
     private func updateAmountDisplays() {
         sellAmountLabel.text = amountString
+
+        // Available balance label
+        let balance = viewModel.getBalance(for: sellCurrency)
+        let maxSell = viewModel.maximumSellAmount(for: sellCurrency)
+        let balanceStr = formatted(balance)
+        availableBalanceLabel.text = "Available: \(balanceStr) \(sellCurrency)"
+
+        if let amount = Double(amountString), amount > 0 {
+            availableBalanceLabel.textColor = amount > maxSell ? .systemRed : .secondaryLabel
+        } else {
+            availableBalanceLabel.textColor = .secondaryLabel
+        }
+
+        // Receive amount
         guard let amount = Double(amountString), amount > 0 else {
             receiveAmountLabel.text = "+0.00"
             return
@@ -356,6 +426,14 @@ final class ExchangeViewController: UIViewController {
         } else {
             receiveAmountLabel.text = "+---"
         }
+    }
+
+    private func formatted(_ value: Double) -> String {
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .decimal
+        fmt.minimumFractionDigits = 2
+        fmt.maximumFractionDigits = 2
+        return fmt.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
     }
 
     // MARK: - Actions
@@ -391,6 +469,17 @@ final class ExchangeViewController: UIViewController {
                 on: self,
                 title: Strings.invalidAmountTitle,
                 message: Strings.invalidAmountMessage
+            )
+            return
+        }
+
+        // Pre-flight balance check: ensure sell + commission won't exceed balance.
+        let maxSell = viewModel.maximumSellAmount(for: sellCurrency)
+        guard amount <= maxSell else {
+            alertPresenter.showAlert(
+                on: self,
+                title: Strings.insufficientFundsTitle,
+                message: String(format: Strings.insufficientFundsMessage, formatted(maxSell), sellCurrency)
             )
             return
         }
@@ -481,11 +570,14 @@ private enum Strings {
     static let commissionFormat = "Commission: %d%% per transaction"
     static let invalidAmountTitle = "Invalid Amount"
     static let invalidAmountMessage = "Please enter a valid amount."
+    static let insufficientFundsTitle = "Insufficient Balance"
+    static let insufficientFundsMessage = "Maximum exchangeable amount is %@ %@ (balance minus the 1%% commission fee)."
     static let successTitle = "Exchange Successful"
     static let successMessageFormat = "You sold %.2f %@ and received %.2f %@.\nFee: %.2f %@"
     static let okButton = "OK"
     static let errorTitle = "Error"
     static let errorGeneric = "An error occurred."
+    static let networkWarning = "Exchange rates may not be up to date. Check your internet connection."
 }
 
 private enum Colors {
@@ -498,32 +590,4 @@ private enum Layout {
     static let iconSize: CGFloat = 40
     static let buttonHeight: CGFloat = 50
     static let buttonCornerRadius: CGFloat = 25
-}
-
-// MARK: - CircleIconView
-
-private final class CircleIconView: UIView {
-
-    init(color: UIColor, arrowUp: Bool) {
-        super.init(frame: .zero)
-        backgroundColor = color
-        layer.cornerRadius = 20
-        clipsToBounds = true
-
-        let symbolName = arrowUp ? "arrow.up" : "arrow.down"
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)
-        let imageView = UIImageView(image: UIImage(systemName: symbolName, withConfiguration: config))
-        imageView.tintColor = .white
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(imageView)
-        NSLayoutConstraint.activate([
-            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 18),
-            imageView.heightAnchor.constraint(equalToConstant: 18)
-        ])
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) not supported") }
 }

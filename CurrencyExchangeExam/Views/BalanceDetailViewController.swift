@@ -7,6 +7,7 @@
 //  Displays the balance for a single currency and lists all transactions
 //  involving that currency, grouped by date. Provides an entry point to
 //  ExchangeViewController via the "Exchange Currency" button.
+//  Displays a connectivity banner when the network is unreachable.
 
 import UIKit
 
@@ -27,18 +28,22 @@ final class BalanceDetailViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .grouped)
     private let headerView = BalanceDetailHeaderView()
+    private let banner = ConnectionStatusBanner()
 
     // MARK: - Properties
 
     private let currency: String
     private let viewModel: BalanceDetailViewModel
+    private let networkMonitor: NetworkMonitoring
+    private var networkMonitorToken: UUID?
     private var sections: [(date: String, rows: [TransactionRow])] = []
 
     // MARK: - Init
 
-    init(currency: String, viewModel: BalanceDetailViewModel) {
+    init(currency: String, viewModel: BalanceDetailViewModel, networkMonitor: NetworkMonitoring) {
         self.currency = currency
         self.viewModel = viewModel
+        self.networkMonitor = networkMonitor
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -51,6 +56,7 @@ final class BalanceDetailViewController: UIViewController {
         title = currency
         view.backgroundColor = .systemGroupedBackground
         setupTableView()
+        setupNetworkMonitoring()
         headerView.onExchangeTapped = { [weak self] in self?.openExchangeModal() }
     }
 
@@ -58,6 +64,9 @@ final class BalanceDetailViewController: UIViewController {
         super.viewWillAppear(animated)
         refreshBalance()
         refreshTransactions()
+        if !networkMonitor.isConnected {
+            banner.show(message: Strings.networkWarning, delay: 0)
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -65,9 +74,37 @@ final class BalanceDetailViewController: UIViewController {
         sizeTableHeaderView()
     }
 
+    deinit {
+        if let token = networkMonitorToken {
+            networkMonitor.removeObserver(id: token)
+        }
+    }
+
+    // MARK: - Network Monitoring
+
+    private func setupNetworkMonitoring() {
+        networkMonitorToken = networkMonitor.addObserver { [weak self] isConnected in
+            guard let self else { return }
+            if isConnected {
+                self.banner.hide()
+            } else {
+                self.banner.show(message: Strings.networkWarning, delay: 3.0)
+            }
+        }
+    }
+
     // MARK: - Setup
 
     private func setupTableView() {
+        // Banner at the safe-area top pushes the tableView down when it expands.
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(banner)
+        NSLayoutConstraint.activate([
+            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            banner.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            banner.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(TransactionCell.self, forCellReuseIdentifier: TransactionCell.reuseID)
@@ -77,7 +114,7 @@ final class BalanceDetailViewController: UIViewController {
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.topAnchor.constraint(equalTo: banner.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -152,7 +189,8 @@ final class BalanceDetailViewController: UIViewController {
     private func openExchangeModal() {
         let exchangeVC = ExchangeViewController(
             viewModel: viewModel.makeExchangeViewModel(),
-            initialSellCurrency: currency
+            initialSellCurrency: currency,
+            networkMonitor: networkMonitor
         )
         exchangeVC.onExchangeCompleted = { [weak self] in
             self?.refreshBalance()
@@ -219,6 +257,7 @@ private enum Strings {
     static let fromFormat = "From: %@"
     static let transactionHistoryHeader = "Transaction History"
     static let noTransactions = "No transactions yet"
+    static let networkWarning = "Exchange rates may not be up to date. Check your internet connection."
 }
 
 // MARK: - BalanceDetailHeaderView

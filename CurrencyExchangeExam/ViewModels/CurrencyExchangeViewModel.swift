@@ -54,6 +54,15 @@ final class ExchangeViewModel {
         }
     }
 
+    func getBalance(for currency: String) -> Double {
+        manager.getBalance(for: currency)
+    }
+
+    /// Returns the maximum sell amount such that sell + 1% commission ≤ available balance.
+    func maximumSellAmount(for currency: String) -> Double {
+        manager.getBalance(for: currency) / (1 + Constants.Account.commissionRate)
+    }
+
     /// Triggers a rate fetch only if the cached rates have expired.
     func refreshRatesIfNeeded() {
         guard manager.rateService.shouldRefreshRates() else { return }
