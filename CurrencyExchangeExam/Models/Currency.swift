@@ -39,30 +39,44 @@ struct Account: Codable {
     }
 }
 
-/**
- {
-   "date": "2026-06-10 00:00:00+00",
-   "base": "USD",
-   "rates": {
-     "AGLD": "5.509641873278237",
-     "FJD": "2.23339",
-     "SCR": "14.6038",
-     "BBD": "2.0",
-     "HNL": "26.6992",
-    }
- }
- */
-/// Represents exchange rate information
+/// A single exchange rate entry from the API
+struct Rate: Codable {
+    let currencyCode: String
+    let value: Double
+}
+
+/// Represents exchange rate information fetched from the API
 struct ExchangeRates: Codable {
     let base: String
-    let rates: [String: Double]
+    let rates: [Rate]
     let date: String?
-    
+
+    // Explicit memberwise init so tests can construct instances directly.
+    init(base: String, rates: [Rate], date: String?) {
+        self.base = base
+        self.rates = rates
+        self.date = date
+    }
+
+    // The API encodes rate values as JSON strings ("1.23"), not numbers,
+    // so the default Codable synthesis would fail with a type mismatch.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        base = try container.decode(String.self, forKey: .base)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+
+        let rawRates = try container.decode([String: String].self, forKey: .rates)
+        rates = rawRates.compactMap { code, valueString in
+            guard let value = Double(valueString) else { return nil }
+            return Rate(currencyCode: code, value: value)
+        }
+    }
+
     /// Get exchange rate between two currencies
     func getRate(from sourceCurrency: String, to targetCurrency: String) -> Double? {
         guard sourceCurrency != targetCurrency else { return 1.0 }
-        guard let sourceRate = rates[sourceCurrency],
-              let targetRate = rates[targetCurrency] else { return nil }
+        guard let sourceRate = rates.first(where: { $0.currencyCode == sourceCurrency })?.value,
+              let targetRate = rates.first(where: { $0.currencyCode == targetCurrency })?.value else { return nil }
         return targetRate / sourceRate
     }
 }
@@ -74,9 +88,13 @@ struct ExchangeTransaction {
     let fromAmount: Double
     let toAmount: Double
     let exchangeRate: Double
+    let commissionAmount: Double
     let timestamp: Date
-    
+
     var description: String {
-        return "\(String(format: "%.2f", fromAmount)) \(fromCurrency) → \(String(format: "%.2f", toAmount)) \(toCurrency)"
+        return String(
+            format: "%.2f %@ → %.2f %@ (fee: %.2f %@)",
+            fromAmount, fromCurrency, toAmount, toCurrency, commissionAmount, fromCurrency
+        )
     }
 }

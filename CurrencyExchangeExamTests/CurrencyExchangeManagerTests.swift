@@ -27,46 +27,47 @@ final class CurrencyExchangeManagerTests: XCTestCase {
     
     // MARK: - Tests: Initialization
     
-    func testInitializationWithEURBalance() {
-        let balance = sut.getBalance(for: "EUR")
+    func testInitializationWithUSDBalance() {
+        let balance = sut.getBalance(for: "USD")
         XCTAssertEqual(balance, 1000)
     }
     
     // MARK: - Tests: Exchange Validation
     
     func testExchangeFailsWithInvalidAmount() {
-        let result = sut.exchange(amount: 0, from: "EUR", to: "USD")
-        
+        let result = sut.exchange(amount: 0, from: "USD", to: "EUR")
+
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .invalidAmount)
         } else {
             XCTFail("Expected failure")
         }
     }
-    
+
     func testExchangeFailsWithSameCurrency() {
-        let result = sut.exchange(amount: 100, from: "EUR", to: "EUR")
-        
+        let result = sut.exchange(amount: 100, from: "USD", to: "USD")
+
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .sameCurrency)
         } else {
             XCTFail("Expected failure")
         }
     }
-    
+
     func testExchangeFailsWithInsufficientFunds() {
-        let result = sut.exchange(amount: 2000, from: "EUR", to: "USD")
-        
+        let result = sut.exchange(amount: 2000, from: "USD", to: "EUR")
+
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .insufficientFunds)
         } else {
             XCTFail("Expected failure")
         }
     }
-    
+
     func testExchangeFailsWithMissingRates() {
-        let result = sut.exchange(amount: 100, from: "EUR", to: "USD")
-        
+        // USD has 1000 balance, so the insufficient-funds check passes and we reach the rates check
+        let result = sut.exchange(amount: 100, from: "USD", to: "EUR")
+
         if case .failure(let error) = result {
             XCTAssertEqual(error as? AppError, .invalidExchangeRate)
         } else {
@@ -77,51 +78,52 @@ final class CurrencyExchangeManagerTests: XCTestCase {
     // MARK: - Tests: Successful Exchange
     
     func testSuccessfulExchange() {
-        // Set up rates
         let rates = ExchangeRates(
-            base: "EUR",
-            rates: ["EUR": 1.0, "USD": 1.1],
+            base: "USD",
+            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
             date: nil
         )
         sut.exchangeRates = rates
-        
-        let result = sut.exchange(amount: 100, from: "EUR", to: "USD")
-        
+
+        let result = sut.exchange(amount: 100, from: "USD", to: "EUR")
+
         switch result {
         case .success(let transaction):
-            XCTAssertEqual(transaction.fromCurrency, "EUR")
-            XCTAssertEqual(transaction.toCurrency, "USD")
+            XCTAssertEqual(transaction.fromCurrency, "USD")
+            XCTAssertEqual(transaction.toCurrency, "EUR")
             XCTAssertEqual(transaction.fromAmount, 100)
-            XCTAssertEqual(transaction.toAmount, 110)
-            XCTAssertEqual(transaction.exchangeRate, 1.1)
+            XCTAssertEqual(transaction.toAmount, 91, accuracy: 0.01)
+            XCTAssertEqual(transaction.exchangeRate, 0.91, accuracy: 0.0001)
+            XCTAssertEqual(transaction.commissionAmount, 1.0, accuracy: 0.001) // 1% of 100
         case .failure:
             XCTFail("Expected success")
         }
     }
-    
+
     func testBalanceUpdatedAfterExchange() {
         let rates = ExchangeRates(
-            base: "EUR",
-            rates: ["EUR": 1.0, "USD": 1.1],
+            base: "USD",
+            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
             date: nil
         )
         sut.exchangeRates = rates
-        
-        _ = sut.exchange(amount: 100, from: "EUR", to: "USD")
-        
-        XCTAssertEqual(sut.getBalance(for: "EUR"), 900)
-        XCTAssertEqual(sut.getBalance(for: "USD"), 110)
+
+        _ = sut.exchange(amount: 100, from: "USD", to: "EUR")
+
+        // 100 sold + 1 commission (1%) deducted from USD; 100 * 0.91 = 91 received in EUR
+        XCTAssertEqual(sut.getBalance(for: "USD"), 899, accuracy: 0.01)
+        XCTAssertEqual(sut.getBalance(for: "EUR"), 91, accuracy: 0.01)
     }
-    
+
     func testTransactionHistoryRecorded() {
         let rates = ExchangeRates(
-            base: "EUR",
-            rates: ["EUR": 1.0, "USD": 1.1],
+            base: "USD",
+            rates: [Rate(currencyCode: "USD", value: 1.0), Rate(currencyCode: "EUR", value: 0.91)],
             date: nil
         )
         sut.exchangeRates = rates
-        
-        _ = sut.exchange(amount: 100, from: "EUR", to: "USD")
+
+        _ = sut.exchange(amount: 100, from: "USD", to: "EUR")
         
         let history = sut.getTransactionHistory()
         XCTAssertEqual(history.count, 1)
@@ -143,10 +145,3 @@ final class MockExchangeRateService: ExchangeRateService {
     }
 }
 
-// Extension to allow setting exchangeRates for testing
-extension CurrencyExchangeManager {
-    var exchangeRates: ExchangeRates? {
-        get { return nil }
-        set { }
-    }
-}

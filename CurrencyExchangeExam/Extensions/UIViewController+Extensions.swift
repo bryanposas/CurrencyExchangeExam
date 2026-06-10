@@ -25,7 +25,7 @@ extension UIViewController {
 
 extension Double {
     /// Format as currency string
-    func formattedCurrency(code: String = "EUR") -> String {
+    func formattedCurrency(code: String = "USD") -> String {
         return String(format: "%.2f %@", self, code)
     }
 }

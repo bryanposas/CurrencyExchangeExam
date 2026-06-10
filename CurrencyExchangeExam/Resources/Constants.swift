@@ -19,6 +19,7 @@ enum Constants {
     enum Account {
         static let initialBalance: Double = 1000
         static let initialCurrency = "USD"
+        static let commissionRate: Double = 0.01
     }
     
     enum UI {

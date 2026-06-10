@@ -17,10 +17,10 @@ final class ExchangeRatesTests: XCTestCase {
         sut = ExchangeRates(
             base: "EUR",
             rates: [
-                "EUR": 1.0,
-                "USD": 1.1,
-                "GBP": 0.86,
-                "JPY": 160.0
+                Rate(currencyCode: "EUR", value: 1.0),
+                Rate(currencyCode: "USD", value: 1.1),
+                Rate(currencyCode: "GBP", value: 0.86),
+                Rate(currencyCode: "JPY", value: 160.0)
             ],
             date: nil
         )
@@ -68,6 +68,47 @@ final class ExchangeRatesTests: XCTestCase {
             let expected = 160.0 / 0.86
             XCTAssertAlmostEqual(rate, expected, accuracy: 0.01)
         }
+    }
+
+    // MARK: - Tests: JSON Decoding (API returns rates as strings, not numbers)
+
+    func testDecoding_RatesAsStrings() throws {
+        let json = """
+        {
+            "date": "2026-06-10 00:00:00+00",
+            "base": "USD",
+            "rates": {
+                "EUR": "0.9209",
+                "GBP": "0.7911",
+                "JPY": "157.25"
+            }
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(ExchangeRates.self, from: json)
+
+        XCTAssertEqual(decoded.base, "USD")
+        XCTAssertEqual(decoded.date, "2026-06-10 00:00:00+00")
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "EUR" })?.value, 0.9209, accuracy: 0.0001)
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "GBP" })?.value, 0.7911, accuracy: 0.0001)
+        XCTAssertEqual(decoded.rates.first(where: { $0.currencyCode == "JPY" })?.value, 157.25, accuracy: 0.01)
+    }
+
+    func testDecoding_SkipsMalformedRateValues() throws {
+        let json = """
+        {
+            "base": "USD",
+            "rates": {
+                "EUR": "0.92",
+                "BAD": "not-a-number"
+            }
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(ExchangeRates.self, from: json)
+
+        XCTAssertNotNil(decoded.rates.first(where: { $0.currencyCode == "EUR" }))
+        XCTAssertNil(decoded.rates.first(where: { $0.currencyCode == "BAD" }))
     }
 }
 

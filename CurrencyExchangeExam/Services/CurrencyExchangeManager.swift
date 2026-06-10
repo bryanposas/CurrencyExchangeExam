@@ -11,7 +11,7 @@ import Foundation
 final class CurrencyExchangeManager {
     // MARK: - Properties
     private var account: Account
-    private var exchangeRates: ExchangeRates?
+    var exchangeRates: ExchangeRates?
     private(set) var transactionHistory: [ExchangeTransaction] = []
     
     let rateService: ExchangeRateService
@@ -21,8 +21,7 @@ final class CurrencyExchangeManager {
     init(rateService: ExchangeRateService = ExchangeRateService()) {
         self.rateService = rateService
         self.account = Account()
-        // Initialize with 1000 EUR
-        self.account.setBalance(1000, for: "EUR")
+        self.account.setBalance(Constants.Account.initialBalance, for: Constants.Account.initialCurrency)
         self.setupAutoRefresh()
     }
     
@@ -46,7 +45,7 @@ final class CurrencyExchangeManager {
     /// Get all currencies that have exchange rates
     func getAllAvailableCurrencies() -> [String] {
         guard let rates = exchangeRates else { return getAvailableCurrencies() }
-        return rates.rates.keys.sorted()
+        return rates.rates.map { $0.currencyCode }.sorted()
     }
     
     /// Perform a currency exchange
@@ -59,24 +58,27 @@ final class CurrencyExchangeManager {
         // Validation
         guard amount > 0 else { return .failure(.invalidAmount) }
         guard fromCurrency != toCurrency else { return .failure(.sameCurrency) }
-        guard account.canExchange(amount: amount, from: fromCurrency) else { return .failure(.insufficientFunds) }
-        
+
+        let commission = amount * Constants.Account.commissionRate
+        let totalCost = amount + commission
+        guard account.canExchange(amount: totalCost, from: fromCurrency) else { return .failure(.insufficientFunds) }
+
         // Get exchange rate
         guard let rates = exchangeRates else { return .failure(.invalidExchangeRate) }
         guard let rate = rates.getRate(from: fromCurrency, to: toCurrency) else {
             return .failure(.invalidExchangeRate)
         }
-        
-        // Calculate target amount
+
+        // Calculate target amount (commission is a fee on top, does not reduce converted amount)
         let targetAmount = amount * rate
-        
+
         // Update balances
-        var updatedBalance = account.getBalance(for: fromCurrency) - amount
+        var updatedBalance = account.getBalance(for: fromCurrency) - totalCost
         account.setBalance(updatedBalance, for: fromCurrency)
-        
+
         updatedBalance = account.getBalance(for: toCurrency) + targetAmount
         account.setBalance(updatedBalance, for: toCurrency)
-        
+
         // Create transaction record
         let transaction = ExchangeTransaction(
             fromCurrency: fromCurrency,
@@ -84,6 +86,7 @@ final class CurrencyExchangeManager {
             fromAmount: amount,
             toAmount: targetAmount,
             exchangeRate: rate,
+            commissionAmount: commission,
             timestamp: Date()
         )
         
@@ -126,12 +129,12 @@ final class CurrencyExchangeManager {
         }
     }
     
-    /// Ensure base currencies exist in the rates (EUR should be present)
+    /// Ensure base currencies exist in the rates (USD should be present as the API base)
     private func ensureBaseCurrenciesExist(_ rates: ExchangeRates) {
-        // If EUR is in our balances but not in rates, try to add it
+        let rateCodes = Set(rates.rates.map { $0.currencyCode })
         for currencyCode in account.balances.keys {
-            if !rates.rates.keys.contains(currencyCode) && currencyCode == "EUR" {
-                // Would need to adjust rates if EUR is not the base
+            if !rateCodes.contains(currencyCode) && currencyCode == Constants.Account.initialCurrency {
+                // Would need to adjust rates if the initial currency is not represented
             }
         }
     }
