@@ -11,7 +11,7 @@
 		0E569B4C2FD93EFF00DD5EBA /* AccountTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B492FD93EFE00DD5EBA /* AccountTests.swift */; };
 		0E569B4D2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */; };
 		0E6B47712FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */; };
-		0E6B47752FD904F50004DE00 /* CurrencyExchangeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47742FD904F50004DE00 /* CurrencyExchangeViewController.swift */; };
+		0E6B47752FD904F50004DE00 /* BalancesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47742FD904F50004DE00 /* BalancesViewController.swift */; };
 		0E6B47772FD904F80004DE00 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E6B47762FD904F80004DE00 /* Assets.xcassets */; };
 		0E6B477C2FD904F80004DE00 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0E6B477B2FD904F80004DE00 /* Preview Assets.xcassets */; };
 		0E6B47862FD904F90004DE00 /* CurrencyExchangeExamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E6B47852FD904F90004DE00 /* CurrencyExchangeExamTests.swift */; };
@@ -56,7 +56,7 @@
 		0E569B4A2FD93EFF00DD5EBA /* CurrencyExchangeManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeManagerTests.swift; sourceTree = "<group>"; };
 		0E6B476D2FD904F50004DE00 /* CurrencyExchangeExam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencyExchangeExam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeExamAppDelegate.swift; sourceTree = "<group>"; };
-		0E6B47742FD904F50004DE00 /* CurrencyExchangeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyExchangeViewController.swift; sourceTree = "<group>"; };
+		0E6B47742FD904F50004DE00 /* BalancesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalancesViewController.swift; sourceTree = "<group>"; };
 		0E6B47762FD904F80004DE00 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0E6B47782FD904F80004DE00 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0E6B47792FD904F80004DE00 /* CurrencyExchangeExam.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CurrencyExchangeExam.entitlements; sourceTree = "<group>"; };
@@ -147,7 +147,6 @@
 				0E73CF092FD921C500A52520 /* Views */,
 				0E569B472FD93D7500DD5EBA /* Controllers */,
 				0E6B47702FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift */,
-				0E6B47742FD904F50004DE00 /* CurrencyExchangeViewController.swift */,
 				0E6B47762FD904F80004DE00 /* Assets.xcassets */,
 				0E6B47782FD904F80004DE00 /* Info.plist */,
 				0E6B47792FD904F80004DE00 /* CurrencyExchangeExam.entitlements */,
@@ -200,6 +199,7 @@
 				0E73CF072FD921C500A52520 /* BalanceCardView.swift */,
 				0E73CF082FD921C500A52520 /* CurrencyPickerViewController.swift */,
 				0E73CF232FD921C500A52520 /* ExchangeViewController.swift */,
+				0E6B47742FD904F50004DE00 /* BalancesViewController.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -378,7 +378,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E6B47712FD904F50004DE00 /* CurrencyExchangeExamAppDelegate.swift in Sources */,
-				0E6B47752FD904F50004DE00 /* CurrencyExchangeViewController.swift in Sources */,
+				0E6B47752FD904F50004DE00 /* BalancesViewController.swift in Sources */,
 				0E73CF1A2FD921C600A52520 /* AppError.swift in Sources */,
 				0E73CF182FD921C600A52520 /* CurrencyExchangeManager.swift in Sources */,
 				0E73CF142FD921C600A52520 /* Constants.swift in Sources */,

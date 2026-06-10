@@ -170,6 +170,10 @@ final class BalanceDetailViewController: UIViewController {
 
     private func openExchangeModal() {
         let exchangeVC = ExchangeViewController(viewModel: viewModel, initialSellCurrency: currency)
+        exchangeVC.onExchangeCompleted = { [weak self] in
+            self?.refreshBalance()
+            self?.refreshTransactions()
+        }
         let nav = UINavigationController(rootViewController: exchangeVC)
         nav.modalPresentationStyle = .pageSheet
         if #available(iOS 15.0, *) {

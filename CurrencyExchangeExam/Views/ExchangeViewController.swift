@@ -57,6 +57,11 @@ final class ExchangeViewController: UIViewController {
 
     // MARK: - Properties
 
+    /// Called after a successful exchange and the success alert is dismissed.
+    /// Use this to refresh any presenting view controller that is not notified
+    /// via viewWillAppear (e.g. pageSheet presenters).
+    var onExchangeCompleted: (() -> Void)?
+
     private let viewModel: CurrencyExchangeViewModel
     private let alertPresenter: AlertPresenting
     private var sellCurrency: String
@@ -452,7 +457,11 @@ extension ExchangeViewController: CurrencyExchangeViewModelDelegate {
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: Strings.okButton, style: .default) { [weak self] _ in
-                self?.dismiss(animated: true)
+                guard let self else { return }
+                // Notify before dismissing so the presenter can refresh its data
+                // while the modal animation is still in progress.
+                self.onExchangeCompleted?()
+                self.dismiss(animated: true)
             })
             self.present(alert, animated: true)
         }

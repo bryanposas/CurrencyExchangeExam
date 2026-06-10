@@ -7,89 +7,112 @@
 
 import UIKit
 
-/// Protocol for currency picker delegate
+// MARK: - Protocol
+
 protocol CurrencyPickerDelegate: AnyObject {
     func currencyPickerDidSelect(_ currency: String)
 }
 
-/// Modal view controller for selecting a currency
+// MARK: - CurrencyPickerViewController
+
 final class CurrencyPickerViewController: UIViewController {
+
     // MARK: - UI Components
+
     private let tableView = UITableView(frame: .zero, style: .plain)
-    private let closeButton = UIButton(type: .system)
-    
+    private let searchController = UISearchController(searchResultsController: nil)
+
     // MARK: - Properties
-    private let currencies: [String]
+
+    private let allCurrencies: [String]
+    private var filteredCurrencies: [String] = []
     private weak var delegate: CurrencyPickerDelegate?
-    
+
+    private var displayedCurrencies: [String] {
+        isFiltering ? filteredCurrencies : allCurrencies
+    }
+
+    private var isFiltering: Bool {
+        searchController.isActive && !(searchController.searchBar.text?.isEmpty ?? true)
+    }
+
     // MARK: - Initialization
+
     init(currencies: [String], delegate: CurrencyPickerDelegate?) {
-        self.currencies = currencies.sorted()
+        self.allCurrencies = currencies.sorted()
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupSearchController()
     }
-    
-    // MARK: - Private Methods
-    
+
+    // MARK: - Setup
+
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        
-        // Close button
-        closeButton.setTitle("Close", for: .normal)
-        closeButton.setTitleColor(.systemBlue, for: .normal)
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
-        closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
-        view.addSubview(closeButton)
-        
-        // Table view
+        title = "Select Currency"
+
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
-        
-        // Layout
+
         NSLayoutConstraint.activate([
-            closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-            closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            
-            tableView.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: 12),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
-    
-    @objc private func closeButtonTapped() {
-        dismiss(animated: true)
+
+    private func setupSearchController() {
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search currency"
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        definesPresentationContext = true
+    }
+}
+
+// MARK: - UISearchResultsUpdating
+
+extension CurrencyPickerViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+        let query = searchController.searchBar.text ?? ""
+        filteredCurrencies = allCurrencies.filter {
+            $0.localizedCaseInsensitiveContains(query)
+        }
+        tableView.reloadData()
     }
 }
 
 // MARK: - UITableViewDataSource & UITableViewDelegate
+
 extension CurrencyPickerViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return currencies.count
+        displayedCurrencies.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        cell.textLabel?.text = currencies[indexPath.row]
+        cell.textLabel?.text = displayedCurrencies[indexPath.row]
         return cell
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedCurrency = currencies[indexPath.row]
-        delegate?.currencyPickerDidSelect(selectedCurrency)
+        delegate?.currencyPickerDidSelect(displayedCurrencies[indexPath.row])
         dismiss(animated: true)
     }
 }
